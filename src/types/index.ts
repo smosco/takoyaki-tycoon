@@ -9,3 +9,9 @@ export interface TakoyakiCellState {
   cookedLevel: 'raw' | 'flipped' | 'perfect' | 'burnt';
   movedToPlate: boolean;
 }
+
+export interface TakoyakiOnPlate {
+  sauce: Sauce | null; // 아직 없지만 예약
+  topping: Topping | null; // 아직 없지만 예약
+  cookedLevel: 'raw' | 'flipped' | 'perfect' | 'burnt';
+}
