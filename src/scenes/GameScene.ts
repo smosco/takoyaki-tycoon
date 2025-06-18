@@ -1,10 +1,19 @@
 import Phaser from 'phaser';
-import { cellState, toolState, plateState, toolToSauce, toolToTopping } from '../state/gameState';
+import {
+  ironPanCells,
+  currentSelectedTool,
+  platesWithTakoyaki,
+  toolToActualSauce,
+  toolToActualTopping,
+  getTakoyakiColorByCookingLevel,
+  calculateCurrentCookingLevel,
+} from '../state/gameState';
 import { ButtonPanel } from '../ui/ButtonPanel';
 
 export class GameScene extends Phaser.Scene {
-  private plateRects: Phaser.GameObjects.Rectangle[] = [];
-  private plateTexts: Phaser.GameObjects.Text[] = [];
+  private plateVisualElements: Phaser.GameObjects.Rectangle[] = [];
+  private plateTextElements: Phaser.GameObjects.Text[] = [];
+  private ironPanVisualCells: Phaser.GameObjects.Rectangle[] = [];
 
   constructor() {
     super('GameScene');
@@ -20,92 +29,127 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.createIronPan();
-    this.createPlates();
-    new ButtonPanel(this, 150, 350); // 철판 아래로 이동
+    this.createIronPanGrid();
+    this.createPlatesArea();
+    new ButtonPanel(this, 150, 350);
+
+    // 실시간 업데이트 시작
+    this.startRealtimeCookingUpdates();
   }
 
-  /**
-   * 철판 생성 함수
-   */
-  private createIronPan() {
-    const startX = 100;
-    const startY = 100;
+  // 철판 격자 생성 (더 명확한 이름)
+  private createIronPanGrid() {
+    const ironPanStartX = 100;
+    const ironPanStartY = 100;
     const cellSize = 60;
+
+    // 철판 배경
+    this.add.rectangle(ironPanStartX + 90, ironPanStartY + 90, 200, 200, 0x444444, 0.8);
 
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
-        const x = startX + 30 + col * cellSize;
-        const y = startY + 30 + row * cellSize;
+        const cellX = ironPanStartX + 30 + col * cellSize;
+        const cellY = ironPanStartY + 30 + row * cellSize;
 
-        const cell = this.add
-          .rectangle(x, y, cellSize - 5, cellSize - 5, 0x666666)
+        const cellVisualElement = this.add
+          .rectangle(cellX, cellY, cellSize - 5, cellSize - 5, 0x666666)
           .setInteractive();
 
-        cell.on('pointerdown', () => this.handleIronPanCellClick(row, col, cell));
+        cellVisualElement.on('pointerdown', () =>
+          this.handleIronPanCellClick(row, col, cellVisualElement)
+        );
+
+        // 셀 저장 (나중에 색상 업데이트용)
+        this.ironPanVisualCells[row * 3 + col] = cellVisualElement;
       }
     }
   }
 
-  /**
-   * 철판 셀 클릭 함수
-   */
-  private handleIronPanCellClick(row: number, col: number, cell: Phaser.GameObjects.Rectangle) {
-    const state = cellState[row][col];
-    const now = Date.now();
+  // 철판 셀 클릭 처리
+  private handleIronPanCellClick(
+    row: number,
+    col: number,
+    cellVisualElement: Phaser.GameObjects.Rectangle
+  ) {
+    const currentCellState = ironPanCells[row][col];
+    const currentTime = Date.now();
 
-    console.log(`[${row},${col}] 모드: ${toolState.current}, 상태:`, state);
+    console.log(
+      `[${row},${col}] 선택된 도구: ${currentSelectedTool.current}, 셀 상태:`,
+      currentCellState
+    );
 
-    switch (toolState.current) {
+    switch (currentSelectedTool.current) {
       case 'batter':
-        if (!state.hasBatter) {
-          state.hasBatter = true;
-          state.startedAt = now;
-          cell.setFillStyle(0xffd700); // 노란색 반죽
-          console.log(`[${row},${col}] 반죽 추가`);
+        if (!currentCellState.hasBatter) {
+          currentCellState.hasBatter = true;
+          currentCellState.cookingStartTime = currentTime;
+          currentCellState.cookingLevel = 'raw';
+
+          // 초기 색상 설정
+          const initialColor = getTakoyakiColorByCookingLevel('raw', false);
+          cellVisualElement.setFillStyle(initialColor);
+
+          console.log(`[${row},${col}] 반죽 추가, 요리 시작!`);
         }
         break;
 
       case 'octopus':
-        if (state.hasBatter && !state.hasOctopus) {
-          state.hasOctopus = true;
-          cell.setFillStyle(0xff8c00); // 주황색 (반죽+문어)
+        if (currentCellState.hasBatter && !currentCellState.hasOctopus) {
+          currentCellState.hasOctopus = true;
           console.log(`[${row},${col}] 문어 추가`);
+          // 색상은 실시간 업데이트에서 관리됨
         }
         break;
 
       case 'stick':
-        if (state.hasBatter && state.hasOctopus) {
-          if (!state.flipped) {
+        if (currentCellState.hasBatter && currentCellState.hasOctopus) {
+          if (!currentCellState.isFlipped) {
             // 첫 번째 클릭: 뒤집기
-            state.flipped = true;
-            state.flippedAt = now;
-            state.cookedLevel = 'flipped';
-            cell.setFillStyle(0x8b4513); // 갈색 (뒤집힌 상태)
-            console.log(`[${row},${col}] 뒤집기 완료`);
+            currentCellState.isFlipped = true;
+            currentCellState.flipTime = currentTime;
+
+            // 현재 익힘 상태 계산하여 저장
+            currentCellState.cookingLevel = calculateCurrentCookingLevel(
+              currentCellState,
+              currentTime
+            );
+
+            const flippedColor = getTakoyakiColorByCookingLevel(
+              currentCellState.cookingLevel,
+              true
+            );
+            cellVisualElement.setFillStyle(flippedColor);
+
+            console.log(`[${row},${col}] 뒤집기 완료! 현재 익힘: ${currentCellState.cookingLevel}`);
           } else {
             // 두 번째 클릭: 접시로 이동
-            if (plateState.length < 9) {
-              plateState.push({
+            if (platesWithTakoyaki.length < 9) {
+              // 최종 익힘 상태 계산
+              const finalCookingLevel = calculateCurrentCookingLevel(currentCellState, currentTime);
+
+              platesWithTakoyaki.push({
                 sauce: null,
                 topping: null,
-                cookedLevel: state.cookedLevel,
+                cookingLevel: finalCookingLevel,
               });
 
               // 셀 완전 초기화
-              Object.assign(state, {
+              Object.assign(currentCellState, {
                 hasBatter: false,
                 hasOctopus: false,
-                flipped: false,
-                startedAt: null,
-                flippedAt: null,
-                cookedLevel: 'raw',
-                movedToPlate: false,
+                isFlipped: false,
+                cookingStartTime: null,
+                flipTime: null,
+                cookingLevel: 'raw',
+                isMovedToPlate: true,
               });
 
-              cell.setFillStyle(0x666666); // 원래 색으로
-              console.log(`[${row},${col}] 접시로 이동! 총 ${plateState.length}개`);
-              this.updatePlates();
+              cellVisualElement.setFillStyle(0x666666); // 원래 색으로
+              console.log(
+                `[${row},${col}] 접시로 이동! 익힘 상태: ${finalCookingLevel}, 총 ${platesWithTakoyaki.length}개`
+              );
+              this.updatePlatesDisplay();
             }
           }
         }
@@ -113,84 +157,85 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private createPlates() {
-    const startX = 350; // 철판 옆으로 이동
-    const startY = 100;
+  // 접시 영역 생성
+  private createPlatesArea() {
+    const platesStartX = 350;
+    const platesStartY = 100;
     const plateSize = 50;
 
     // 접시 영역 배경
-    this.add.rectangle(startX + 75, startY + 75, 180, 180, 0x444444, 0.8);
+    this.add.rectangle(platesStartX + 75, platesStartY + 75, 180, 180, 0x444444, 0.8);
 
-    for (let i = 0; i < 9; i++) {
-      const x = startX + 25 + (i % 3) * plateSize;
-      const y = startY + 25 + Math.floor(i / 3) * plateSize;
+    for (let plateIndex = 0; plateIndex < 9; plateIndex++) {
+      const plateX = platesStartX + 25 + (plateIndex % 3) * plateSize;
+      const plateY = platesStartY + 25 + Math.floor(plateIndex / 3) * plateSize;
 
-      const plate = this.add
-        .rectangle(x, y, plateSize - 5, plateSize - 5, 0x999999)
+      const plateVisualElement = this.add
+        .rectangle(plateX, plateY, plateSize - 5, plateSize - 5, 0x999999)
         .setStrokeStyle(2, 0x333333)
         .setInteractive();
 
-      const text = this.add
-        .text(x, y, '', {
+      const plateTextElement = this.add
+        .text(plateX, plateY, '', {
           fontSize: '20px',
           color: '#000',
         })
         .setOrigin(0.5);
 
-      this.plateRects.push(plate);
-      this.plateTexts.push(text);
+      this.plateVisualElements.push(plateVisualElement);
+      this.plateTextElements.push(plateTextElement);
 
       // 접시 클릭 이벤트 (소스/토핑용)
-      plate.on('pointerdown', () => this.handlePlateClick(i));
+      plateVisualElement.on('pointerdown', () => this.handlePlateClick(plateIndex));
     }
 
-    this.updatePlates();
+    this.updatePlatesDisplay();
   }
 
-  // 접시에 담긴 타코야끼 클릭
+  // 접시에 담긴 타코야끼 클릭 처리
   private handlePlateClick(plateIndex: number) {
-    if (plateIndex >= plateState.length) return; // 빈 접시면 무시
+    if (plateIndex >= platesWithTakoyaki.length) return; // 빈 접시면 무시
 
-    const takoyaki = plateState[plateIndex];
+    const clickedTakoyaki = platesWithTakoyaki[plateIndex];
 
-    switch (toolState.current) {
+    switch (currentSelectedTool.current) {
       case 'sauce':
-        if (!takoyaki.sauce) {
-          takoyaki.sauce = toolToSauce['sauce']; // 'okonomiyaki'
-          console.log(`접시[${plateIndex}] 소스 추가: ${takoyaki.sauce}`);
-          this.updatePlates();
+        if (!clickedTakoyaki.sauce) {
+          clickedTakoyaki.sauce = toolToActualSauce['sauce'];
+          console.log(`접시[${plateIndex}] 소스 추가: ${clickedTakoyaki.sauce}`);
+          this.updatePlatesDisplay();
         } else {
-          console.log(`접시[${plateIndex}]에 이미 소스가 있습니다: ${takoyaki.sauce}`);
+          console.log(`접시[${plateIndex}]에 이미 소스가 있습니다: ${clickedTakoyaki.sauce}`);
         }
         break;
 
       case 'topping1':
-        if (!takoyaki.topping) {
-          takoyaki.topping = toolToTopping['topping1']; // 'mayo'
-          console.log(`접시[${plateIndex}] 토핑 추가: ${takoyaki.topping}`);
-          this.updatePlates();
+        if (!clickedTakoyaki.topping) {
+          clickedTakoyaki.topping = toolToActualTopping['topping1'];
+          console.log(`접시[${plateIndex}] 토핑 추가: ${clickedTakoyaki.topping}`);
+          this.updatePlatesDisplay();
         } else {
-          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${takoyaki.topping}`);
+          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${clickedTakoyaki.topping}`);
         }
         break;
 
       case 'topping2':
-        if (!takoyaki.topping) {
-          takoyaki.topping = toolToTopping['topping2']; // 'katsuobushi'
-          console.log(`접시[${plateIndex}] 토핑 추가: ${takoyaki.topping}`);
-          this.updatePlates();
+        if (!clickedTakoyaki.topping) {
+          clickedTakoyaki.topping = toolToActualTopping['topping2'];
+          console.log(`접시[${plateIndex}] 토핑 추가: ${clickedTakoyaki.topping}`);
+          this.updatePlatesDisplay();
         } else {
-          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${takoyaki.topping}`);
+          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${clickedTakoyaki.topping}`);
         }
         break;
 
       case 'topping3':
-        if (!takoyaki.topping) {
-          takoyaki.topping = toolToTopping['topping3']; // 'nori'
-          console.log(`접시[${plateIndex}] 토핑 추가: ${takoyaki.topping}`);
-          this.updatePlates();
+        if (!clickedTakoyaki.topping) {
+          clickedTakoyaki.topping = toolToActualTopping['topping3'];
+          console.log(`접시[${plateIndex}] 토핑 추가: ${clickedTakoyaki.topping}`);
+          this.updatePlatesDisplay();
         } else {
-          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${takoyaki.topping}`);
+          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${clickedTakoyaki.topping}`);
         }
         break;
 
@@ -199,49 +244,90 @@ export class GameScene extends Phaser.Scene {
         break;
 
       default:
-        console.log(`${toolState.current} 모드에서는 접시를 클릭할 수 없습니다`);
+        console.log(`${currentSelectedTool.current} 모드에서는 접시를 클릭할 수 없습니다`);
         break;
     }
   }
 
-  // 토핑 추가
-  private updatePlates() {
-    for (let i = 0; i < this.plateRects.length; i++) {
-      if (i < plateState.length) {
-        const takoyaki = plateState[i];
+  // 접시 표시 업데이트
+  private updatePlatesDisplay() {
+    for (let plateIndex = 0; plateIndex < this.plateVisualElements.length; plateIndex++) {
+      if (plateIndex < platesWithTakoyaki.length) {
+        const currentTakoyaki = platesWithTakoyaki[plateIndex];
 
         // 색상 결정 (소스/토핑 여부에 따라)
-        let color = 0xffcc66; // 기본 타코야끼 색 (노란색)
+        let plateColor = 0xffcc66; // 기본 타코야끼 색 (노란색)
         let displayText = '🍥';
 
-        if (takoyaki.sauce && takoyaki.topping) {
+        if (currentTakoyaki.sauce && currentTakoyaki.topping) {
           // 소스 + 토핑 완성품
-          color = 0xff6b6b; // 빨간색
+          plateColor = 0xff6b6b; // 빨간색
           displayText = '🍥✨'; // 완성품 표시
-        } else if (takoyaki.sauce) {
+        } else if (currentTakoyaki.sauce) {
           // 소스만 있음
-          color = 0xffa500; // 주황색
+          plateColor = 0xffa500; // 주황색
           displayText = '🍥';
         } else {
           // 기본 타코야끼 (소스/토핑 없음)
-          color = 0xffcc66; // 기본 노란색
+          plateColor = 0xffcc66; // 기본 노란색
           displayText = '🍥';
         }
 
-        this.plateRects[i].setFillStyle(color);
-        this.plateTexts[i].setText(displayText);
+        this.plateVisualElements[plateIndex].setFillStyle(plateColor);
+        this.plateTextElements[plateIndex].setText(displayText);
 
         // 디버그용 콘솔 출력 (선택사항)
-        if (i === 0) {
-          // 첫 번째 접시만 상태 출력
+        if (plateIndex === 0) {
           console.log(
-            `접시[${i}] 상태 - 소스: ${takoyaki.sauce}, 토핑: ${takoyaki.topping}, 익힘: ${takoyaki.cookedLevel}`
+            `접시[${plateIndex}] 상태 - 소스: ${currentTakoyaki.sauce}, 토핑: ${currentTakoyaki.topping}, 익힘: ${currentTakoyaki.cookingLevel}`
           );
         }
       } else {
         // 빈 접시
-        this.plateRects[i].setFillStyle(0x999999); // 회색
-        this.plateTexts[i].setText(''); // 텍스트 없음
+        this.plateVisualElements[plateIndex].setFillStyle(0x999999); // 회색
+        this.plateTextElements[plateIndex].setText(''); // 텍스트 없음
+      }
+    }
+  }
+
+  // 실시간 익힘 상태 업데이트 시작
+  private startRealtimeCookingUpdates() {
+    this.time.addEvent({
+      delay: 100, // 0.1초마다 업데이트
+      callback: this.updateAllCellsCookingStates,
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  // 모든 셀의 익힘 상태 업데이트
+  private updateAllCellsCookingStates() {
+    const currentTime = Date.now();
+
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const currentCellState = ironPanCells[row][col];
+        const cellVisualIndex = row * 3 + col;
+        const cellVisualElement = this.ironPanVisualCells[cellVisualIndex];
+
+        if (currentCellState.hasBatter && !currentCellState.isMovedToPlate) {
+          // 익힘 상태 계산
+          const newCookingLevel = calculateCurrentCookingLevel(currentCellState, currentTime);
+
+          // 상태가 변경되었을 때만 업데이트
+          if (currentCellState.cookingLevel !== newCookingLevel) {
+            currentCellState.cookingLevel = newCookingLevel;
+
+            // 색상 업데이트
+            const updatedColor = getTakoyakiColorByCookingLevel(
+              newCookingLevel,
+              currentCellState.isFlipped
+            );
+            cellVisualElement.setFillStyle(updatedColor);
+
+            console.log(`[${row},${col}] 익힘 상태 변경: ${newCookingLevel}`);
+          }
+        }
       }
     }
   }
