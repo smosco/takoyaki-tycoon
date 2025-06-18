@@ -1,6 +1,5 @@
-// src/scenes/GameScene.ts
 import Phaser from 'phaser';
-import { gridState, toolState, plateState } from '../state/gameState';
+import { cellState, toolState, plateState, toolToSauce, toolToTopping } from '../state/gameState';
 import { ButtonPanel } from '../ui/ButtonPanel';
 
 export class GameScene extends Phaser.Scene {
@@ -21,18 +20,18 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.createGrid();
+    this.createIronPan();
     this.createPlates();
     new ButtonPanel(this, 150, 350); // 철판 아래로 이동
   }
 
-  private createGrid() {
+  /**
+   * 철판 생성 함수
+   */
+  private createIronPan() {
     const startX = 100;
     const startY = 100;
     const cellSize = 60;
-
-    // 철판 배경
-    this.add.rectangle(startX + 90, startY + 90, 200, 200, 0x444444, 0.8);
 
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
@@ -43,13 +42,16 @@ export class GameScene extends Phaser.Scene {
           .rectangle(x, y, cellSize - 5, cellSize - 5, 0x666666)
           .setInteractive();
 
-        cell.on('pointerdown', () => this.handleGridClick(row, col, cell));
+        cell.on('pointerdown', () => this.handleIronPanCellClick(row, col, cell));
       }
     }
   }
 
-  private handleGridClick(row: number, col: number, cell: Phaser.GameObjects.Rectangle) {
-    const state = gridState[row][col];
+  /**
+   * 철판 셀 클릭 함수
+   */
+  private handleIronPanCellClick(row: number, col: number, cell: Phaser.GameObjects.Rectangle) {
+    const state = cellState[row][col];
     const now = Date.now();
 
     console.log(`[${row},${col}] 모드: ${toolState.current}, 상태:`, state);
@@ -145,6 +147,7 @@ export class GameScene extends Phaser.Scene {
     this.updatePlates();
   }
 
+  // 접시에 담긴 타코야끼 클릭
   private handlePlateClick(plateIndex: number) {
     if (plateIndex >= plateState.length) return; // 빈 접시면 무시
 
@@ -153,60 +156,92 @@ export class GameScene extends Phaser.Scene {
     switch (toolState.current) {
       case 'sauce':
         if (!takoyaki.sauce) {
-          takoyaki.sauce = 'okonomiyaki'; // 기본 소스
-          console.log(`접시[${plateIndex}] 소스 추가`);
+          takoyaki.sauce = toolToSauce['sauce']; // 'okonomiyaki'
+          console.log(`접시[${plateIndex}] 소스 추가: ${takoyaki.sauce}`);
           this.updatePlates();
+        } else {
+          console.log(`접시[${plateIndex}]에 이미 소스가 있습니다: ${takoyaki.sauce}`);
         }
         break;
 
       case 'topping1':
         if (!takoyaki.topping) {
-          takoyaki.topping = 'mayo'; // 마요네즈
-          console.log(`접시[${plateIndex}] 마요 추가`);
+          takoyaki.topping = toolToTopping['topping1']; // 'mayo'
+          console.log(`접시[${plateIndex}] 토핑 추가: ${takoyaki.topping}`);
           this.updatePlates();
+        } else {
+          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${takoyaki.topping}`);
         }
         break;
 
       case 'topping2':
         if (!takoyaki.topping) {
-          takoyaki.topping = 'katsuobushi'; // 가츠오부시
-          console.log(`접시[${plateIndex}] 가츠오부시 추가`);
+          takoyaki.topping = toolToTopping['topping2']; // 'katsuobushi'
+          console.log(`접시[${plateIndex}] 토핑 추가: ${takoyaki.topping}`);
           this.updatePlates();
+        } else {
+          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${takoyaki.topping}`);
         }
         break;
 
       case 'topping3':
         if (!takoyaki.topping) {
-          takoyaki.topping = 'nori'; // 김
-          console.log(`접시[${plateIndex}] 김 추가`);
+          takoyaki.topping = toolToTopping['topping3']; // 'nori'
+          console.log(`접시[${plateIndex}] 토핑 추가: ${takoyaki.topping}`);
           this.updatePlates();
+        } else {
+          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${takoyaki.topping}`);
         }
         break;
 
       case 'serve':
         console.log('서빙 모드에서는 개별 접시 클릭이 아닌 서빙 버튼을 사용하세요');
         break;
+
+      default:
+        console.log(`${toolState.current} 모드에서는 접시를 클릭할 수 없습니다`);
+        break;
     }
   }
 
+  // 토핑 추가
   private updatePlates() {
     for (let i = 0; i < this.plateRects.length; i++) {
       if (i < plateState.length) {
         const takoyaki = plateState[i];
 
         // 색상 결정 (소스/토핑 여부에 따라)
-        let color = 0xffcc66; // 기본 타코야끼 색
+        let color = 0xffcc66; // 기본 타코야끼 색 (노란색)
+        let displayText = '🍥';
+
         if (takoyaki.sauce && takoyaki.topping) {
-          color = 0xff6b6b; // 완성품 (빨간색)
+          // 소스 + 토핑 완성품
+          color = 0xff6b6b; // 빨간색
+          displayText = '🍥✨'; // 완성품 표시
         } else if (takoyaki.sauce) {
-          color = 0xffa500; // 소스만 (주황색)
+          // 소스만 있음
+          color = 0xffa500; // 주황색
+          displayText = '🍥';
+        } else {
+          // 기본 타코야끼 (소스/토핑 없음)
+          color = 0xffcc66; // 기본 노란색
+          displayText = '🍥';
         }
 
         this.plateRects[i].setFillStyle(color);
-        this.plateTexts[i].setText('🍥');
+        this.plateTexts[i].setText(displayText);
+
+        // 디버그용 콘솔 출력 (선택사항)
+        if (i === 0) {
+          // 첫 번째 접시만 상태 출력
+          console.log(
+            `접시[${i}] 상태 - 소스: ${takoyaki.sauce}, 토핑: ${takoyaki.topping}, 익힘: ${takoyaki.cookedLevel}`
+          );
+        }
       } else {
-        this.plateRects[i].setFillStyle(0x999999);
-        this.plateTexts[i].setText('');
+        // 빈 접시
+        this.plateRects[i].setFillStyle(0x999999); // 회색
+        this.plateTexts[i].setText(''); // 텍스트 없음
       }
     }
   }
