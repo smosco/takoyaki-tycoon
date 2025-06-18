@@ -97,8 +97,8 @@ export class GameScene extends Phaser.Scene {
       case 'octopus':
         if (currentCellState.hasBatter && !currentCellState.hasOctopus) {
           currentCellState.hasOctopus = true;
+          cellVisualElement.setFillStyle(0xff8c00);
           console.log(`[${row},${col}] 문어 추가`);
-          // 색상은 실시간 업데이트에서 관리됨
         }
         break;
 

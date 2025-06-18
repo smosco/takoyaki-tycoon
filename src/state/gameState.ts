@@ -102,21 +102,21 @@ export function getTakoyakiColorByCookingLevel(
     // 첫 번째 면
     switch (cookingLevel) {
       case 'raw':
-        return 0xffd700; // 노란색 (반죽)
+        return 0xdaa520; // 노란색 (반죽)
       case 'perfect':
-        return 0xff8c00; // 주황색 (적당히 익음)
+        return 0xcd853f; // 주황색 (적당히 익음)
       case 'burnt':
-        return 0x8b4513; // 갈색 (타기 시작)
+        return 0x654321; // 갈색 (탐)
     }
   } else {
     // 뒤집힌 후
     switch (cookingLevel) {
       case 'raw':
-        return 0xdaa520; // 어두운 노란색
+        return 0xdaa520;
       case 'perfect':
-        return 0xcd853f; // 완벽한 갈색
+        return 0xcd853f;
       case 'burnt':
-        return 0x654321; // 검은 갈색 (탐)
+        return 0x654321;
     }
   }
 }
