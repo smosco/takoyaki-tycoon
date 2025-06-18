@@ -1,13 +1,10 @@
 import Phaser from 'phaser';
-import GameScene from './scenes/GameScene';
+import { GameScene } from './scenes/GameScene';
 
-const config: Phaser.Types.Core.GameConfig = {
+new Phaser.Game({
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
-  backgroundColor: '#222',
-  parent: 'app',
+  width: 600,
+  height: 400,
   scene: [GameScene],
-};
-
-new Phaser.Game(config);
+  backgroundColor: '#222',
+});
