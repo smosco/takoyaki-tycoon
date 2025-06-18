@@ -1,80 +1,107 @@
 import Phaser from 'phaser';
+import { grid, mode, toggleMode, handleCellClick, type ToolMode } from '../game/gameState';
 
 export default class GameScene extends Phaser.Scene {
-  private batterMode: boolean = false;
-  private octopusMode: boolean = false;
-  private gridCells: Phaser.GameObjects.Rectangle[] = [];
+  private cellRects: Phaser.GameObjects.Rectangle[] = [];
+  private cellTexts: Phaser.GameObjects.Text[] = [];
+  private modeButtons: {
+    mode: ToolMode;
+    rect: Phaser.GameObjects.Rectangle;
+    text: Phaser.GameObjects.Text;
+  }[] = [];
 
   constructor() {
     super('GameScene');
   }
 
-  preload() {
-    // 나중에 이미지 preload
-  }
-
   create() {
-    const GRID_ROWS = 3;
-    const GRID_COLS = 3;
-    const CELL_SIZE = 100;
+    const startX = 100;
+    const startY = 100;
+    const cellSize = 64;
+    const gap = 10;
 
-    // 타코야끼 틀
-    for (let row = 0; row < GRID_ROWS; row++) {
-      for (let col = 0; col < GRID_COLS; col++) {
-        const x = 150 + col * CELL_SIZE;
-        const y = 100 + row * CELL_SIZE;
+    // 철판 셀 3x3 생성
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const index = row * 3 + col;
+        const x = startX + col * (cellSize + gap);
+        const y = startY + row * (cellSize + gap);
 
-        const cell = this.add.rectangle(x, y, 80, 80, 0x555555).setStrokeStyle(2, 0xaaaaaa);
-        cell.setInteractive();
-        cell.setData('hasBatter', false);
-        cell.setData('hasOctopus', false);
-
-        cell.on('pointerdown', () => {
-          // 반죽 모드
-          if (this.batterMode && !cell.getData('hasBatter')) {
-            cell.setFillStyle(0xffcc99);
-            cell.setData('hasBatter', true);
-            return;
-          }
-
-          // 문어 모드
-          if (this.octopusMode && cell.getData('hasBatter') && !cell.getData('hasOctopus')) {
-            cell.setFillStyle(0xff9988);
-            cell.setData('hasOctopus', true);
-            return;
-          }
+        const rect = this.add.rectangle(x, y, cellSize, cellSize, 0x888888).setOrigin(0);
+        rect.setInteractive();
+        rect.on('pointerdown', () => {
+          handleCellClick(index, Date.now());
+          this.updateGridVisual();
         });
 
-        this.gridCells.push(cell);
+        const text = this.add.text(x + 5, y + 5, '', { fontSize: '12px', color: '#fff' });
+
+        this.cellRects.push(rect);
+        this.cellTexts.push(text);
       }
     }
 
-    // 반죽 버튼
-    const batterButton = this.add
-      .rectangle(650, 120, 120, 50, 0x0088ff)
-      .setInteractive()
-      .setStrokeStyle(2, 0xffffff);
-    const batterText = this.add.text(0, 0, '반죽', { fontSize: '20px', color: '#ffffff' });
-    Phaser.Display.Align.In.Center(batterText, batterButton);
+    // 버튼 생성 (batter, octopus, skewer)
+    const buttonModes: ToolMode[] = ['batter', 'octopus', 'skewer'];
+    buttonModes.forEach((mode, i) => {
+      const x = startX + i * (100 + 10);
+      const y = startY + 3 * (cellSize + gap) + 20;
 
-    batterButton.on('pointerdown', () => {
-      this.batterMode = true;
-      this.octopusMode = false;
-      console.log('반죽 모드 ON!');
+      const rect = this.add.rectangle(x, y, 100, 40, 0x444444).setOrigin(0);
+      rect.setInteractive();
+      rect.on('pointerdown', () => {
+        toggleMode(mode);
+        this.updateButtonVisual();
+      });
+
+      const text = this.add.text(x + 10, y + 10, mode!, {
+        fontSize: '14px',
+        color: '#fff',
+      });
+
+      this.modeButtons.push({ mode, rect, text });
     });
 
-    // 문어 버튼
-    const octopusButton = this.add
-      .rectangle(650, 190, 120, 50, 0xff5588)
-      .setInteractive()
-      .setStrokeStyle(2, 0xffffff);
-    const octopusText = this.add.text(0, 0, '문어', { fontSize: '20px', color: '#ffffff' });
-    Phaser.Display.Align.In.Center(octopusText, octopusButton);
+    this.updateGridVisual();
+    this.updateButtonVisual();
+  }
 
-    octopusButton.on('pointerdown', () => {
-      this.octopusMode = true;
-      this.batterMode = false;
-      console.log('문어 모드 ON!');
+  updateGridVisual() {
+    grid.forEach((cell, i) => {
+      const rect = this.cellRects[i];
+      const text = this.cellTexts[i];
+
+      let color = 0x888888;
+      let status = '';
+      if (cell.hasBatter) {
+        color = 0xffd700;
+        status = 'B';
+      }
+      if (cell.hasOctopus) {
+        color = 0xffa500;
+        status += 'O';
+      }
+      if (cell.flipped) {
+        color = 0x8b4513;
+        status = 'F';
+      }
+      if (cell.movedToPlate) {
+        color = 0x222222;
+        status = 'X';
+      }
+
+      rect.setFillStyle(color);
+      text.setText(status);
+    });
+  }
+
+  updateButtonVisual() {
+    this.modeButtons.forEach(({ mode: m, rect }) => {
+      if (mode === m) {
+        rect.setFillStyle(0x00cc66);
+      } else {
+        rect.setFillStyle(0x444444);
+      }
     });
   }
 }
