@@ -56,6 +56,10 @@ export class GameScene extends Phaser.Scene {
     this.load.image('tako-perfect-sauce', 'assets/tako-perfect-sauce.png');
     this.load.image('tako-raw-sauce', 'assets/tako-raw-sauce.png');
     this.load.image('tako-burnt-sauce', 'assets/tako-burnt-sauce.png');
+
+    this.load.image('tako-perfect-sauce-negi', 'assets/tako-perfect-sauce-negi.png');
+    this.load.image('tako-raw-sauce-negi', 'assets/tako-raw-sauce-negi.png');
+    this.load.image('tako-burnt-sauce-nogi', 'assets/tako-burnt-sauce-negi.png');
   }
 
   /**
@@ -265,7 +269,7 @@ export class GameScene extends Phaser.Scene {
         }
         break;
 
-      case 'mayo':
+      case 'negi':
       case 'katsuobushi':
       case 'nori':
         // 토핑 타입 체크 및 직접 할당
@@ -305,8 +309,8 @@ export class GameScene extends Phaser.Scene {
         if (currentTakoyaki.sauce && currentTakoyaki.topping) {
           // 소스 + 토핑 완성품
           if (currentTakoyaki.cookingLevel === 'raw') {
-            if (currentTakoyaki.topping === 'mayo') {
-              plateImage = 'tako-raw-sauce-mayo';
+            if (currentTakoyaki.topping === 'negi') {
+              plateImage = 'tako-raw-sauce-negi';
             }
             if (currentTakoyaki.topping === 'katsuobushi') {
               plateImage = 'tako-raw-sauce-katsuobushi';
@@ -316,8 +320,8 @@ export class GameScene extends Phaser.Scene {
             }
           }
           if (currentTakoyaki.cookingLevel === 'perfect') {
-            if (currentTakoyaki.topping === 'mayo') {
-              plateImage = 'tako-perfect-sauce-mayo';
+            if (currentTakoyaki.topping === 'negi') {
+              plateImage = 'tako-perfect-sauce-negi';
             }
             if (currentTakoyaki.topping === 'katsuobushi') {
               plateImage = 'tako-perfect-sauce-katsuobushi';
@@ -327,8 +331,8 @@ export class GameScene extends Phaser.Scene {
             }
           }
           if (currentTakoyaki.cookingLevel === 'burnt') {
-            if (currentTakoyaki.topping === 'mayo') {
-              plateImage = 'tako-burnt-sauce-mayo';
+            if (currentTakoyaki.topping === 'negi') {
+              plateImage = 'tako-burnt-sauce-negi';
             }
             if (currentTakoyaki.topping === 'katsuobushi') {
               plateImage = 'tako-burnt-sauce-katsuobushi';
@@ -435,7 +439,7 @@ export class GameScene extends Phaser.Scene {
       // 결과 로그
       const breakdown = result.result.breakdown;
       console.log('상세 결과:', {
-        마요: `${breakdown.mayo.correct}/${breakdown.mayo.requested}`,
+        마요: `${breakdown.negi.correct}/${breakdown.negi.requested}`,
         가츠오: `${breakdown.katsuobushi.correct}/${breakdown.katsuobushi.requested}`,
         김: `${breakdown.nori.correct}/${breakdown.nori.requested}`,
         토핑없음: `${breakdown.none.correct}/${breakdown.none.requested}`,
@@ -565,8 +569,8 @@ export class GameScene extends Phaser.Scene {
     let orderLines: string[] = [`총 ${order.totalQuantity}개 (소스 필수)`];
 
     // 토핑별로 표시 (0개가 아닌 것만)
-    if (order.toppingBreakdown.mayo > 0) {
-      orderLines.push(`마요 ${order.toppingBreakdown.mayo}개`);
+    if (order.toppingBreakdown.negi > 0) {
+      orderLines.push(`마요 ${order.toppingBreakdown.negi}개`);
     }
     if (order.toppingBreakdown.katsuobushi > 0) {
       orderLines.push(`가츠오 ${order.toppingBreakdown.katsuobushi}개`);

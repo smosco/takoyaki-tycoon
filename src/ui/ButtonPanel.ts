@@ -9,7 +9,6 @@ export class ButtonPanel {
   private scene: Phaser.Scene;
   private toolButtonElements: Phaser.GameObjects.Image[] = [];
   private toolButtonTexts: Phaser.GameObjects.Text[] = [];
-  private serveButton: Phaser.GameObjects.Rectangle | null = null;
   private onServeCallback: (() => void) | null = null;
 
   /**
@@ -81,7 +80,7 @@ export class ButtonPanel {
 
     // 토핑들 생성 (두 번째 줄)
     const toppingsData: { tool: Tool; label: string; color: number }[] = [
-      { tool: 'mayo', label: '마요', color: 0xfffacd },
+      { tool: 'negi', label: '파', color: 0xfffacd },
       { tool: 'katsuobushi', label: '가츠오', color: 0xdeb887 },
       { tool: 'nori', label: '김', color: 0x2f4f2f },
     ];

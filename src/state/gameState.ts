@@ -1,5 +1,5 @@
 export type Sauce = 'okonomiyaki';
-export type Topping = 'mayo' | 'katsuobushi' | 'nori';
+export type Topping = 'negi' | 'katsuobushi' | 'nori';
 export type CookingLevel = 'raw' | 'perfect' | 'burnt';
 
 // 손님 주문
@@ -8,7 +8,7 @@ export interface CustomerOrder {
   sauceRequired: true; // 소스는 무조건 필요
   toppingBreakdown: {
     // 토핑별 개수
-    mayo: number; // 마요네즈 몇 개
+    negi: number; // 파 몇 개
     katsuobushi: number; // 가츠오부시 몇 개
     nori: number; // 김 몇 개
     none: number; // 토핑 없이 몇 개
@@ -30,7 +30,7 @@ export type Tool =
   | 'octopus'
   | 'stick'
   | 'sauce'
-  | 'mayo'
+  | 'negi'
   | 'katsuobushi'
   | 'nori'
   | 'serve';
@@ -129,7 +129,7 @@ export function getTakoyakiColorByCookingLevel(cookingLevel: CookingLevel): stri
     case 'raw':
       return 'plate-cell-batter'; // 노란색 (반죽)
     case 'perfect':
-      return 'plate-cell-cooked'; // 주황색 (적당히 익음)
+      return 'plate-cell-perfect'; // 주황색 (적당히 익음)
     case 'burnt':
       return 'plate-cell-burnt'; // 갈색 (탐)
   }
@@ -142,7 +142,7 @@ export function getTakoyakiColorByCookingLevel(cookingLevel: CookingLevel): stri
  * @returns 토핑이면 true, 아니면 false
  */
 export function isTopping(tool: Tool): tool is Topping {
-  return tool === 'mayo' || tool === 'katsuobushi' || tool === 'nori';
+  return tool === 'negi' || tool === 'katsuobushi' || tool === 'nori';
 }
 
 // =====================================
@@ -162,14 +162,14 @@ export function generateRandomOrder(): CustomerOrder {
   // 토핑 개수를 랜덤하게 분배
   let remainingQuantity = totalQuantity;
   const toppingBreakdown = {
-    mayo: 0,
+    negi: 0,
     katsuobushi: 0,
     nori: 0,
     none: 0,
   };
 
   // 각 토핑에 랜덤하게 할당
-  const toppings: (keyof typeof toppingBreakdown)[] = ['mayo', 'katsuobushi', 'nori', 'none'];
+  const toppings: (keyof typeof toppingBreakdown)[] = ['negi', 'katsuobushi', 'nori', 'none'];
 
   for (let i = 0; i < toppings.length && remainingQuantity > 0; i++) {
     if (i === toppings.length - 1) {
@@ -226,7 +226,7 @@ export function compareOrderWithServedTakoyaki(
   mood: CustomerMood;
   score: number;
   breakdown: {
-    mayo: { requested: number; correct: number };
+    negi: { requested: number; correct: number };
     katsuobushi: { requested: number; correct: number };
     nori: { requested: number; correct: number };
     none: { requested: number; correct: number };
@@ -237,7 +237,7 @@ export function compareOrderWithServedTakoyaki(
   console.log('주문과 서빙 비교:', order, servedTakoyaki);
 
   const breakdown = {
-    mayo: { requested: order.toppingBreakdown.mayo, correct: 0 },
+    negi: { requested: order.toppingBreakdown.negi, correct: 0 },
     katsuobushi: { requested: order.toppingBreakdown.katsuobushi, correct: 0 },
     nori: { requested: order.toppingBreakdown.nori, correct: 0 },
     none: { requested: order.toppingBreakdown.none, correct: 0 },
@@ -266,8 +266,8 @@ export function compareOrderWithServedTakoyaki(
     // 토핑 체크
     const toppingType = takoyaki.topping || 'none';
 
-    if (toppingType === 'mayo' && breakdown.mayo.correct < breakdown.mayo.requested) {
-      breakdown.mayo.correct++;
+    if (toppingType === 'negi' && breakdown.negi.correct < breakdown.negi.requested) {
+      breakdown.negi.correct++;
     } else if (
       toppingType === 'katsuobushi' &&
       breakdown.katsuobushi.correct < breakdown.katsuobushi.requested
@@ -283,7 +283,7 @@ export function compareOrderWithServedTakoyaki(
 
   // 올바른 타코야끼 개수 계산
   const correctCount =
-    breakdown.mayo.correct +
+    breakdown.negi.correct +
     breakdown.katsuobushi.correct +
     breakdown.nori.correct +
     breakdown.none.correct;
