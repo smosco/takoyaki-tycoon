@@ -3,8 +3,6 @@ import {
   ironPanCells,
   currentSelectedTool,
   platesWithTakoyaki,
-  toolToActualSauce,
-  toolToActualTopping,
   getTakoyakiColorByCookingLevel,
   calculateCurrentCookingLevel,
 } from '../state/gameState';
@@ -37,7 +35,7 @@ export class GameScene extends Phaser.Scene {
     this.startRealtimeCookingUpdates();
   }
 
-  // 철판 격자 생성 (더 명확한 이름)
+  // 철판 격자 생성
   private createIronPanGrid() {
     const ironPanStartX = 100;
     const ironPanStartY = 100;
@@ -87,7 +85,7 @@ export class GameScene extends Phaser.Scene {
           currentCellState.cookingLevel = 'raw';
 
           // 초기 색상 설정
-          const initialColor = getTakoyakiColorByCookingLevel('raw', false);
+          const initialColor = getTakoyakiColorByCookingLevel('raw');
           cellVisualElement.setFillStyle(initialColor);
 
           console.log(`[${row},${col}] 반죽 추가, 요리 시작!`);
@@ -105,22 +103,8 @@ export class GameScene extends Phaser.Scene {
       case 'stick':
         if (currentCellState.hasBatter && currentCellState.hasOctopus) {
           if (!currentCellState.isFlipped) {
-            // 첫 번째 클릭: 뒤집기
+            // 첫 번째 클릭: 뒤집기 (시간은 그대로 진행)
             currentCellState.isFlipped = true;
-            currentCellState.flipTime = currentTime;
-
-            // 현재 익힘 상태 계산하여 저장
-            currentCellState.cookingLevel = calculateCurrentCookingLevel(
-              currentCellState,
-              currentTime
-            );
-
-            const flippedColor = getTakoyakiColorByCookingLevel(
-              currentCellState.cookingLevel,
-              true
-            );
-            cellVisualElement.setFillStyle(flippedColor);
-
             console.log(`[${row},${col}] 뒤집기 완료! 현재 익힘: ${currentCellState.cookingLevel}`);
           } else {
             // 두 번째 클릭: 접시로 이동
@@ -140,7 +124,6 @@ export class GameScene extends Phaser.Scene {
                 hasOctopus: false,
                 isFlipped: false,
                 cookingStartTime: null,
-                flipTime: null,
                 cookingLevel: 'raw',
                 isMovedToPlate: true,
               });
@@ -192,16 +175,17 @@ export class GameScene extends Phaser.Scene {
     this.updatePlatesDisplay();
   }
 
-  // 접시에 담긴 타코야끼 클릭 처리
+  // 접시 클릭 처리
   private handlePlateClick(plateIndex: number) {
     if (plateIndex >= platesWithTakoyaki.length) return; // 빈 접시면 무시
 
     const clickedTakoyaki = platesWithTakoyaki[plateIndex];
+    const currentTool = currentSelectedTool.current;
 
-    switch (currentSelectedTool.current) {
+    switch (currentTool) {
       case 'sauce':
         if (!clickedTakoyaki.sauce) {
-          clickedTakoyaki.sauce = toolToActualSauce['sauce'];
+          clickedTakoyaki.sauce = 'okonomiyaki'; // 직접 할당
           console.log(`접시[${plateIndex}] 소스 추가: ${clickedTakoyaki.sauce}`);
           this.updatePlatesDisplay();
         } else {
@@ -209,29 +193,11 @@ export class GameScene extends Phaser.Scene {
         }
         break;
 
-      case 'topping1':
+      case 'mayo':
+      case 'katsuobushi':
+      case 'nori':
         if (!clickedTakoyaki.topping) {
-          clickedTakoyaki.topping = toolToActualTopping['topping1'];
-          console.log(`접시[${plateIndex}] 토핑 추가: ${clickedTakoyaki.topping}`);
-          this.updatePlatesDisplay();
-        } else {
-          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${clickedTakoyaki.topping}`);
-        }
-        break;
-
-      case 'topping2':
-        if (!clickedTakoyaki.topping) {
-          clickedTakoyaki.topping = toolToActualTopping['topping2'];
-          console.log(`접시[${plateIndex}] 토핑 추가: ${clickedTakoyaki.topping}`);
-          this.updatePlatesDisplay();
-        } else {
-          console.log(`접시[${plateIndex}]에 이미 토핑이 있습니다: ${clickedTakoyaki.topping}`);
-        }
-        break;
-
-      case 'topping3':
-        if (!clickedTakoyaki.topping) {
-          clickedTakoyaki.topping = toolToActualTopping['topping3'];
+          clickedTakoyaki.topping = currentTool;
           console.log(`접시[${plateIndex}] 토핑 추가: ${clickedTakoyaki.topping}`);
           this.updatePlatesDisplay();
         } else {
@@ -244,7 +210,7 @@ export class GameScene extends Phaser.Scene {
         break;
 
       default:
-        console.log(`${currentSelectedTool.current} 모드에서는 접시를 클릭할 수 없습니다`);
+        console.log(`${currentTool} 모드에서는 접시를 클릭할 수 없습니다`);
         break;
     }
   }
@@ -276,7 +242,7 @@ export class GameScene extends Phaser.Scene {
         this.plateVisualElements[plateIndex].setFillStyle(plateColor);
         this.plateTextElements[plateIndex].setText(displayText);
 
-        // 디버그용 콘솔 출력 (선택사항)
+        // 디버그용 콘솔 출력
         if (plateIndex === 0) {
           console.log(
             `접시[${plateIndex}] 상태 - 소스: ${currentTakoyaki.sauce}, 토핑: ${currentTakoyaki.topping}, 익힘: ${currentTakoyaki.cookingLevel}`
@@ -300,7 +266,7 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // 모든 셀의 익힘 상태 업데이트
+  // 모든 셀의 익힘 상태 업데이트 (기존과 동일)
   private updateAllCellsCookingStates() {
     const currentTime = Date.now();
 
@@ -319,10 +285,7 @@ export class GameScene extends Phaser.Scene {
             currentCellState.cookingLevel = newCookingLevel;
 
             // 색상 업데이트
-            const updatedColor = getTakoyakiColorByCookingLevel(
-              newCookingLevel,
-              currentCellState.isFlipped
-            );
+            const updatedColor = getTakoyakiColorByCookingLevel(newCookingLevel);
             cellVisualElement.setFillStyle(updatedColor);
 
             console.log(`[${row},${col}] 익힘 상태 변경: ${newCookingLevel}`);

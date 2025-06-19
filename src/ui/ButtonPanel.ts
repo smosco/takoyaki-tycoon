@@ -44,10 +44,10 @@ export class ButtonPanel {
     });
 
     // 토핑들
-    const toppingsData = [
-      { tool: 'topping1' as Tool, label: '마요', color: 0xfffacd },
-      { tool: 'topping2' as Tool, label: '가츠오', color: 0xdeb887 },
-      { tool: 'topping3' as Tool, label: '김', color: 0x2f4f2f },
+    const toppingsData: { tool: Tool; label: string; color: number }[] = [
+      { tool: 'mayo', label: '마요', color: 0xfffacd },
+      { tool: 'katsuobushi', label: '가츠오', color: 0xdeb887 },
+      { tool: 'nori', label: '김', color: 0x2f4f2f },
     ];
 
     toppingsData.forEach((toppingData, toppingIndex) => {
@@ -68,7 +68,7 @@ export class ButtonPanel {
       toppingButton.on('pointerdown', () => {
         currentSelectedTool.current = toppingData.tool;
         this.updateAllButtonStyles();
-        console.log('선택된 토핑:', toppingData.tool); // 토핑 선택 -> 선택된 토핑
+        console.log('선택된 토핑:', toppingData.tool);
       });
     });
 
@@ -82,9 +82,9 @@ export class ButtonPanel {
       'stick',
       'sauce',
       'serve',
-      'topping1',
-      'topping2',
-      'topping3',
+      'mayo',
+      'katsuobushi',
+      'nori',
     ];
 
     this.toolButtonElements.forEach((buttonElement, buttonIndex) => {
