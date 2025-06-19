@@ -18,7 +18,7 @@ import {
 import { ButtonPanel } from '../ui/ButtonPanel';
 
 export class GameScene extends Phaser.Scene {
-  private plateVisualElements: Phaser.GameObjects.Rectangle[] = [];
+  private plateVisualElements: Phaser.GameObjects.Image[] = [];
   private plateTextElements: Phaser.GameObjects.Text[] = [];
   private ironPanVisualCells: Phaser.GameObjects.Image[] = [];
 
@@ -44,6 +44,18 @@ export class GameScene extends Phaser.Scene {
     );
     this.load.image('plate-cell-cooked', 'assets/plate-cell-batter-cooked.png');
     this.load.image('plate-cell-burnt', 'assets/plate-cell-batter-burnt.png');
+    this.load.image('table', 'assets/table.png');
+    this.load.image('dish', 'assets/dish.png');
+
+    this.load.image('tako-position', 'assets/tako-position.png');
+
+    this.load.image('tako-perfect', 'assets/tako-perfect.png');
+    this.load.image('tako-raw', 'assets/tako-raw.png');
+    this.load.image('tako-burnt', 'assets/tako-burnt.png');
+
+    this.load.image('tako-perfect-sauce', 'assets/tako-perfect-sauce.png');
+    this.load.image('tako-raw-sauce', 'assets/tako-raw-sauce.png');
+    this.load.image('tako-burnt-sauce', 'assets/tako-burnt-sauce.png');
   }
 
   /**
@@ -51,7 +63,8 @@ export class GameScene extends Phaser.Scene {
    * 철판, 접시, 손님 영역, 버튼 패널 등을 배치하고 실시간 업데이트를 시작합니다.
    */
   create() {
-    this.add.image(400, 80, 'tent').setScale(0.3).setDepth(1);
+    this.add.image(400, 100, 'tent').setScale(0.3).setDepth(1);
+    this.add.image(250, 405, 'table').setScale(0.25);
 
     this.createIronPanGrid();
     this.createPlatesArea();
@@ -75,8 +88,8 @@ export class GameScene extends Phaser.Scene {
    * 각 셀은 클릭 가능하며, 선택된 도구에 따라 다른 동작을 수행합니다.
    */
   private createIronPanGrid() {
-    const ironPanStartX = 80;
-    const ironPanStartY = 190;
+    const ironPanStartX = 90;
+    const ironPanStartY = 240;
     const cellSize = 80;
 
     // 철판 배경
@@ -188,24 +201,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 3x3 접시 영역을 생성합니다.
+   * 2x5 접시 영역을 생성합니다.
    * 각 접시는 클릭 가능하며, 소스나 토핑을 추가할 수 있습니다.
    */
   private createPlatesArea() {
-    const platesStartX = 350;
-    const platesStartY = 100;
+    const platesStartX = 340;
+    const platesStartY = 260;
     const plateSize = 50;
 
-    // 접시 영역 배경
-    this.add.rectangle(platesStartX + 75, platesStartY + 75, 180, 180, 0x444444, 0.8);
+    // 접시 이미지
+    this.add.image(platesStartX + 75, platesStartY + 75, 'dish').setScale(0.25);
 
     for (let plateIndex = 0; plateIndex < 9; plateIndex++) {
-      const plateX = platesStartX + 25 + (plateIndex % 3) * plateSize;
-      const plateY = platesStartY + 25 + Math.floor(plateIndex / 3) * plateSize;
+      const plateX = platesStartX + 50 + (plateIndex % 2) * plateSize;
+      const plateY = platesStartY - 25 + Math.floor(plateIndex / 2) * plateSize;
 
+      // 추후 타코 위치를 잡기 위해 투명 png 넣음
       const plateVisualElement = this.add
-        .rectangle(plateX, plateY, plateSize - 5, plateSize - 5, 0x999999)
-        .setStrokeStyle(2, 0x333333)
+        .image(plateX, plateY, 'tako-position')
+        .setScale(0.07)
         .setInteractive();
 
       const plateTextElement = this.add
@@ -278,35 +292,78 @@ export class GameScene extends Phaser.Scene {
    * - 기본: 노란색 배경
    * - 빈 접시: 회색 배경
    */
+
+  // TODO: 먼저 익힘 여부에 따라, 소스가 묻었느냐에 따라, 토핑이 3가지중 뭐가 올라가 있느냐에 따라 이미지가 달라야한다.
   private updatePlatesDisplay() {
     for (let plateIndex = 0; plateIndex < this.plateVisualElements.length; plateIndex++) {
       if (plateIndex < platesWithTakoyaki.length) {
         const currentTakoyaki = platesWithTakoyaki[plateIndex];
 
         // 색상 결정 (소스/토핑 여부에 따라)
-        let plateColor = 0xffcc66; // 기본 타코야끼 색 (노란색)
-        let displayText = '🍥';
+        let plateImage = 'tako-position';
 
         if (currentTakoyaki.sauce && currentTakoyaki.topping) {
           // 소스 + 토핑 완성품
-          plateColor = 0xff6b6b; // 빨간색
-          displayText = '🍥✨'; // 완성품 표시
+          if (currentTakoyaki.cookingLevel === 'raw') {
+            if (currentTakoyaki.topping === 'mayo') {
+              plateImage = 'tako-raw-sauce-mayo';
+            }
+            if (currentTakoyaki.topping === 'katsuobushi') {
+              plateImage = 'tako-raw-sauce-katsuobushi';
+            }
+            if (currentTakoyaki.topping === 'nori') {
+              plateImage = 'tako-raw-sauce-nori';
+            }
+          }
+          if (currentTakoyaki.cookingLevel === 'perfect') {
+            if (currentTakoyaki.topping === 'mayo') {
+              plateImage = 'tako-perfect-sauce-mayo';
+            }
+            if (currentTakoyaki.topping === 'katsuobushi') {
+              plateImage = 'tako-perfect-sauce-katsuobushi';
+            }
+            if (currentTakoyaki.topping === 'nori') {
+              plateImage = 'tako-perfect-sauce-nori';
+            }
+          }
+          if (currentTakoyaki.cookingLevel === 'burnt') {
+            if (currentTakoyaki.topping === 'mayo') {
+              plateImage = 'tako-burnt-sauce-mayo';
+            }
+            if (currentTakoyaki.topping === 'katsuobushi') {
+              plateImage = 'tako-burnt-sauce-katsuobushi';
+            }
+            if (currentTakoyaki.topping === 'nori') {
+              plateImage = 'tako-burnt-sauce-nori';
+            }
+          }
         } else if (currentTakoyaki.sauce) {
           // 소스만 있음
-          plateColor = 0xffa500; // 주황색
-          displayText = '🍥';
+          if (currentTakoyaki.cookingLevel === 'raw') {
+            plateImage = 'tako-raw-sauce';
+          }
+          if (currentTakoyaki.cookingLevel === 'perfect') {
+            plateImage = 'tako-perfect-sauce';
+          }
+          if (currentTakoyaki.cookingLevel === 'burnt') {
+            plateImage = 'tako-burnt-sauce';
+          }
         } else {
-          // 기본 타코야끼 (소스/토핑 없음)
-          plateColor = 0xffcc66; // 기본 노란색
-          displayText = '🍥';
+          if (currentTakoyaki.cookingLevel === 'raw') {
+            plateImage = 'tako-raw';
+          }
+          if (currentTakoyaki.cookingLevel === 'perfect') {
+            plateImage = 'tako-perfect';
+          }
+          if (currentTakoyaki.cookingLevel === 'burnt') {
+            plateImage = 'tako-burnt';
+          }
         }
 
-        this.plateVisualElements[plateIndex].setFillStyle(plateColor);
-        this.plateTextElements[plateIndex].setText(displayText);
+        this.plateVisualElements[plateIndex].setTexture(plateImage);
       } else {
         // 빈 접시
-        this.plateVisualElements[plateIndex].setFillStyle(0x999999); // 회색
-        this.plateTextElements[plateIndex].setText(''); // 텍스트 없음
+        this.plateVisualElements[plateIndex].setTexture('tako-position');
       }
     }
   }
