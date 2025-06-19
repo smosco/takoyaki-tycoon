@@ -32,6 +32,10 @@ export class GameScene extends Phaser.Scene {
     super('GameScene');
   }
 
+  preload() {
+    this.load.image('button', 'assets/button.png');
+  }
+
   /**
    * 게임 씬을 초기화하고 모든 UI 요소들을 생성합니다.
    * 철판, 접시, 손님 영역, 버튼 패널 등을 배치하고 실시간 업데이트를 시작합니다.
@@ -52,7 +56,7 @@ export class GameScene extends Phaser.Scene {
     this.createUI();
 
     // ButtonPanel에 서빙 콜백 전달
-    new ButtonPanel(this, 150, 350, () => this.handleServing());
+    new ButtonPanel(this, 100, 450, () => this.handleServing());
 
     // 게임 시작
     startGame();

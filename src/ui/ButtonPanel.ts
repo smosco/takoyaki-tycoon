@@ -7,7 +7,7 @@ import { currentSelectedTool, type Tool } from '../state/gameState';
  */
 export class ButtonPanel {
   private scene: Phaser.Scene;
-  private toolButtonElements: Phaser.GameObjects.Rectangle[] = [];
+  private toolButtonElements: Phaser.GameObjects.Image[] = [];
   private toolButtonTexts: Phaser.GameObjects.Text[] = [];
   private serveButton: Phaser.GameObjects.Rectangle | null = null;
   private onServeCallback: (() => void) | null = null;
@@ -37,8 +37,10 @@ export class ButtonPanel {
 
     // 메인 도구들 생성 (첫 번째 줄)
     mainToolsData.forEach((toolData, buttonIndex) => {
+      // TODO: 선택됐을 때 표시
       const toolButton = this.scene.add
-        .rectangle(startX + buttonIndex * 90, startY, 80, 40, toolData.color)
+        .image(startX + buttonIndex * 90, startY, 'button')
+        .setScale(0.25)
         .setInteractive();
 
       const toolButtonText = this.scene.add
@@ -58,19 +60,19 @@ export class ButtonPanel {
       });
     });
 
-    // 서빙 버튼 (소스 옆에 배치 - 첫 번째 줄)
-    this.serveButton = this.scene.add
-      .rectangle(startX + 4 * 90, startY, 80, 40, 0x4caf50)
+    const serveButton = this.scene.add
+      .image(startX + 4 * 90, startY, 'button')
+      .setScale(0.25)
       .setInteractive();
 
     this.scene.add
       .text(startX + 4 * 90, startY, '서빙', {
         fontSize: '14px',
-        color: '#fff',
+        color: '#000',
       })
       .setOrigin(0.5);
 
-    this.serveButton.on('pointerdown', () => {
+    serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
         this.onServeCallback();
       }
@@ -86,11 +88,12 @@ export class ButtonPanel {
 
     toppingsData.forEach((toppingData, toppingIndex) => {
       const toppingButton = this.scene.add
-        .rectangle(startX + toppingIndex * 90, startY + 60, 80, 35, toppingData.color)
+        .image(startX + toppingIndex * 90, startY + 90, 'button')
+        .setScale(0.25)
         .setInteractive();
 
       const toppingButtonText = this.scene.add
-        .text(startX + toppingIndex * 90, startY + 60, toppingData.label, {
+        .text(startX + toppingIndex * 90, startY + 90, toppingData.label, {
           fontSize: '12px',
           color: '#000',
         })
@@ -129,9 +132,9 @@ export class ButtonPanel {
     // 도구 버튼들의 스타일 업데이트
     this.toolButtonElements.forEach((buttonElement, buttonIndex) => {
       if (allAvailableTools[buttonIndex] === currentSelectedTool.current) {
-        buttonElement.setStrokeStyle(3, 0x000000); // 선택된 버튼 강조
+        // buttonElement.setStrokeStyle(3, 0x000000); // 선택된 버튼 강조
       } else {
-        buttonElement.setStrokeStyle(1, 0x666666); // 선택되지 않은 버튼
+        // buttonElement.setStrokeStyle(1, 0x666666); // 선택되지 않은 버튼
       }
     });
 
