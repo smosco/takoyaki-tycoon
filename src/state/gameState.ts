@@ -124,14 +124,14 @@ export function calculateCurrentCookingLevel(
  * @param cookingLevel - 익힘 정도
  * @returns 해당하는 색상 코드
  */
-export function getTakoyakiColorByCookingLevel(cookingLevel: CookingLevel): number {
+export function getTakoyakiColorByCookingLevel(cookingLevel: CookingLevel): string {
   switch (cookingLevel) {
     case 'raw':
-      return 0xdaa520; // 노란색 (반죽)
+      return 'plate-cell-batter'; // 노란색 (반죽)
     case 'perfect':
-      return 0xcd853f; // 주황색 (적당히 익음)
+      return 'plate-cell-cooked'; // 주황색 (적당히 익음)
     case 'burnt':
-      return 0x654321; // 갈색 (탐)
+      return 'plate-cell-burnt'; // 갈색 (탐)
   }
 }
 

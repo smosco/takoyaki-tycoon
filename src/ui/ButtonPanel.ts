@@ -61,12 +61,12 @@ export class ButtonPanel {
     });
 
     const serveButton = this.scene.add
-      .image(startX + 4 * 90, startY, 'button')
+      .image(startX + 7 * 90, startY, 'button')
       .setScale(0.25)
       .setInteractive();
 
     this.scene.add
-      .text(startX + 4 * 90, startY, '서빙', {
+      .text(startX + 7 * 90, startY, '서빙', {
         fontSize: '14px',
         color: '#000',
       })
@@ -88,12 +88,12 @@ export class ButtonPanel {
 
     toppingsData.forEach((toppingData, toppingIndex) => {
       const toppingButton = this.scene.add
-        .image(startX + toppingIndex * 90, startY + 90, 'button')
+        .image(startX + (4 + toppingIndex) * 90, startY, 'button')
         .setScale(0.25)
         .setInteractive();
 
       const toppingButtonText = this.scene.add
-        .text(startX + toppingIndex * 90, startY + 90, toppingData.label, {
+        .text(startX + (4 + toppingIndex) * 90, startY, toppingData.label, {
           fontSize: '12px',
           color: '#000',
         })
@@ -117,30 +117,5 @@ export class ButtonPanel {
    * 선택된 버튼은 검은색 두꺼운 테두리로 강조되고,
    * 서빙 버튼은 별도의 고유 스타일을 유지합니다.
    */
-  private updateAllButtonStyles() {
-    // 선택 가능한 모든 도구들 (서빙 버튼 제외)
-    const allAvailableTools: Tool[] = [
-      'batter',
-      'octopus',
-      'stick',
-      'sauce',
-      'mayo',
-      'katsuobushi',
-      'nori',
-    ];
-
-    // 도구 버튼들의 스타일 업데이트
-    this.toolButtonElements.forEach((buttonElement, buttonIndex) => {
-      if (allAvailableTools[buttonIndex] === currentSelectedTool.current) {
-        // buttonElement.setStrokeStyle(3, 0x000000); // 선택된 버튼 강조
-      } else {
-        // buttonElement.setStrokeStyle(1, 0x666666); // 선택되지 않은 버튼
-      }
-    });
-
-    // 서빙 버튼은 항상 같은 스타일 유지 (선택 상태와 무관)
-    if (this.serveButton) {
-      this.serveButton.setStrokeStyle(2, 0x2e7d32); // 서빙 버튼 고유 스타일
-    }
-  }
+  private updateAllButtonStyles() {}
 }

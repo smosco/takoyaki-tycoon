@@ -20,7 +20,7 @@ import { ButtonPanel } from '../ui/ButtonPanel';
 export class GameScene extends Phaser.Scene {
   private plateVisualElements: Phaser.GameObjects.Rectangle[] = [];
   private plateTextElements: Phaser.GameObjects.Text[] = [];
-  private ironPanVisualCells: Phaser.GameObjects.Rectangle[] = [];
+  private ironPanVisualCells: Phaser.GameObjects.Image[] = [];
 
   // 손님 UI 요소들
   private customerContainer: Phaser.GameObjects.Container | null = null;
@@ -34,6 +34,16 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.image('button', 'assets/button.png');
+    this.load.image('tent', 'assets/tent.png');
+    this.load.image('plate', 'assets/plate.png');
+    this.load.image('plate-cell', 'assets/plate-cell.png');
+    this.load.image('plate-cell-batter', 'assets/plate-cell-batter.png');
+    this.load.image(
+      'plate-cell-batter-with-octopus',
+      'assets/plate-cell-batter-with-pretty-octopus.png'
+    );
+    this.load.image('plate-cell-cooked', 'assets/plate-cell-batter-cooked.png');
+    this.load.image('plate-cell-burnt', 'assets/plate-cell-batter-burnt.png');
   }
 
   /**
@@ -41,14 +51,7 @@ export class GameScene extends Phaser.Scene {
    * 철판, 접시, 손님 영역, 버튼 패널 등을 배치하고 실시간 업데이트를 시작합니다.
    */
   create() {
-    // 배경
-    this.add.rectangle(400, 300, 800, 600, 0x2d2d2d);
-    this.add
-      .text(400, 30, 'Takoyaki Tycoon', {
-        fontSize: '24px',
-        color: '#fff',
-      })
-      .setOrigin(0.5);
+    this.add.image(400, 80, 'tent').setScale(0.3).setDepth(1);
 
     this.createIronPanGrid();
     this.createPlatesArea();
@@ -56,7 +59,7 @@ export class GameScene extends Phaser.Scene {
     this.createUI();
 
     // ButtonPanel에 서빙 콜백 전달
-    new ButtonPanel(this, 100, 450, () => this.handleServing());
+    new ButtonPanel(this, 80, 540, () => this.handleServing());
 
     // 게임 시작
     startGame();
@@ -72,20 +75,21 @@ export class GameScene extends Phaser.Scene {
    * 각 셀은 클릭 가능하며, 선택된 도구에 따라 다른 동작을 수행합니다.
    */
   private createIronPanGrid() {
-    const ironPanStartX = 100;
-    const ironPanStartY = 100;
-    const cellSize = 60;
+    const ironPanStartX = 80;
+    const ironPanStartY = 190;
+    const cellSize = 80;
 
     // 철판 배경
-    this.add.rectangle(ironPanStartX + 90, ironPanStartY + 90, 200, 200, 0x444444, 0.8);
+    this.add.image(ironPanStartX + 90, ironPanStartY + 90, 'plate').setScale(0.3);
 
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
-        const cellX = ironPanStartX + 30 + col * cellSize;
-        const cellY = ironPanStartY + 30 + row * cellSize;
+        const cellX = ironPanStartX + 10 + col * cellSize;
+        const cellY = ironPanStartY + 10 + row * cellSize;
 
         const cellVisualElement = this.add
-          .rectangle(cellX, cellY, cellSize - 5, cellSize - 5, 0x666666)
+          .image(cellX, cellY, 'plate-cell')
+          .setScale(0.07)
           .setInteractive();
 
         cellVisualElement.on('pointerdown', () =>
@@ -109,7 +113,7 @@ export class GameScene extends Phaser.Scene {
   private handleIronPanCellClick(
     row: number,
     col: number,
-    cellVisualElement: Phaser.GameObjects.Rectangle
+    cellVisualElement: Phaser.GameObjects.Image
   ) {
     // 게임이 비활성화된 상태에서는 조작 불가
     if (!gameFlow.isGameActive) return;
@@ -129,10 +133,8 @@ export class GameScene extends Phaser.Scene {
           currentCellState.cookingStartTime = currentTime;
           currentCellState.cookingLevel = 'raw';
 
-          // 초기 색상 설정
-          const initialColor = getTakoyakiColorByCookingLevel('raw');
-          cellVisualElement.setFillStyle(initialColor);
-
+          // 반죽 이미지로 변경
+          cellVisualElement.setTexture('plate-cell-batter');
           console.log(`[${row},${col}] 반죽 추가, 요리 시작!`);
         }
         break;
@@ -140,7 +142,7 @@ export class GameScene extends Phaser.Scene {
       case 'octopus':
         if (currentCellState.hasBatter && !currentCellState.hasOctopus) {
           currentCellState.hasOctopus = true;
-          cellVisualElement.setFillStyle(0xff8c00);
+          cellVisualElement.setTexture('plate-cell-batter-with-octopus');
           console.log(`[${row},${col}] 문어 추가`);
         }
         break;
@@ -173,7 +175,7 @@ export class GameScene extends Phaser.Scene {
                 isMovedToPlate: true,
               });
 
-              cellVisualElement.setFillStyle(0x666666); // 원래 색으로
+              cellVisualElement.setTexture('plate-cell'); // 원래 상태로
               console.log(
                 `[${row},${col}] 접시로 이동! 익힘 상태: ${finalCookingLevel}, 총 ${platesWithTakoyaki.length}개`
               );
@@ -620,11 +622,32 @@ export class GameScene extends Phaser.Scene {
           if (currentCellState.cookingLevel !== newCookingLevel) {
             currentCellState.cookingLevel = newCookingLevel;
 
-            // 색상 업데이트
-            const updatedColor = getTakoyakiColorByCookingLevel(newCookingLevel);
-            cellVisualElement.setFillStyle(updatedColor);
+            // 문어가 있는 경우와 없는 경우를 구분하여 이미지 설정
+            let textureKey: string;
+            if (currentCellState.hasOctopus) {
+              // 문어가 있을 때의 익힘 상태에 따른 이미지
+              switch (newCookingLevel) {
+                case 'raw':
+                  textureKey = 'plate-cell-batter-with-octopus';
+                  break;
+                case 'perfect':
+                  textureKey = 'plate-cell-cooked';
+                  break;
+                case 'burnt':
+                  textureKey = 'plate-cell-burnt';
+                  break;
+                default:
+                  textureKey = 'plate-cell-batter-with-octopus';
+              }
+            } else {
+              // 문어가 없을 때 (반죽만 있을 때)
+              textureKey = getTakoyakiColorByCookingLevel(newCookingLevel);
+            }
 
-            console.log(`[${row},${col}] 익힘 상태 변경: ${newCookingLevel}`);
+            cellVisualElement.setTexture(textureKey);
+            console.log(
+              `[${row},${col}] 익힘 상태 변경: ${newCookingLevel}, 텍스처: ${textureKey}`
+            );
           }
         }
       }
