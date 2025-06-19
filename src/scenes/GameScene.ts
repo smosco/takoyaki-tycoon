@@ -10,6 +10,10 @@ import {
   serveToCustomer,
   gameScore,
   gameStats,
+  startGame,
+  updateGameTimer,
+  getFormattedTime,
+  gameFlow,
 } from '../state/gameState';
 import { ButtonPanel } from '../ui/ButtonPanel';
 
@@ -22,6 +26,7 @@ export class GameScene extends Phaser.Scene {
   private customerContainer: Phaser.GameObjects.Container | null = null;
   private scoreText: Phaser.GameObjects.Text | null = null;
   private statsText: Phaser.GameObjects.Text | null = null;
+  private timerText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super('GameScene');
@@ -49,9 +54,13 @@ export class GameScene extends Phaser.Scene {
     // ButtonPanel에 서빙 콜백 전달
     new ButtonPanel(this, 150, 350, () => this.handleServing());
 
+    // 게임 시작
+    startGame();
+
     // 실시간 업데이트 시작
     this.startRealtimeCookingUpdates();
     this.startCustomerSystem();
+    this.startGameTimer();
   }
 
   /**
@@ -98,6 +107,9 @@ export class GameScene extends Phaser.Scene {
     col: number,
     cellVisualElement: Phaser.GameObjects.Rectangle
   ) {
+    // 게임이 비활성화된 상태에서는 조작 불가
+    if (!gameFlow.isGameActive) return;
+
     const currentCellState = ironPanCells[row][col];
     const currentTime = Date.now();
 
@@ -214,6 +226,9 @@ export class GameScene extends Phaser.Scene {
    * @param plateIndex - 클릭한 접시의 인덱스 (0-8)
    */
   private handlePlateClick(plateIndex: number) {
+    // 게임이 비활성화된 상태에서는 조작 불가
+    if (!gameFlow.isGameActive) return;
+
     if (plateIndex >= platesWithTakoyaki.length) return; // 빈 접시면 무시
 
     const clickedTakoyaki = platesWithTakoyaki[plateIndex];
@@ -304,10 +319,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 점수와 통계를 표시하는 UI를 생성합니다.
+   * 점수, 통계, 타이머를 표시하는 UI를 생성합니다.
    * 서빙 버튼은 ButtonPanel에서 관리되므로 여기서는 제외됩니다.
    */
   private createUI() {
+    // 타이머 (화면 최상단 중앙)
+    this.timerText = this.add
+      .text(400, 60, '03:00', {
+        fontSize: '28px',
+        color: '#fff',
+        fontFamily: 'Arial Bold',
+        backgroundColor: '#333333',
+        padding: { x: 15, y: 8 },
+      })
+      .setOrigin(0.5);
+
     // 점수 표시
     this.scoreText = this.add.text(50, 50, 'Score: 0', {
       fontSize: '18px',
@@ -323,6 +349,7 @@ export class GameScene extends Phaser.Scene {
     // 초기 UI 업데이트
     this.updateCustomerDisplay();
     this.updateScoreDisplay();
+    this.updateTimerDisplay();
   }
 
   /**
@@ -331,6 +358,12 @@ export class GameScene extends Phaser.Scene {
    * 서빙 후 잠시 뒤 새로운 손님이 등장합니다.
    */
   private handleServing() {
+    // 게임이 활성화되지 않았으면 서빙 불가
+    if (!gameFlow.isGameActive) {
+      console.log('게임이 종료되어 서빙할 수 없습니다.');
+      return;
+    }
+
     const result = serveToCustomer();
 
     if (result.success && result.result) {
@@ -356,8 +389,10 @@ export class GameScene extends Phaser.Scene {
 
       // 잠시 후 새 손님 등장
       this.time.delayedCall(2000, () => {
-        spawnNewCustomer();
-        this.updateCustomerDisplay();
+        if (gameFlow.isGameActive) {
+          spawnNewCustomer();
+          this.updateCustomerDisplay();
+        }
       });
     } else {
       console.log(result.message);
@@ -394,7 +429,7 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // 점수 표시 (색상 수정)
+    // 점수 표시
     const scoreDisplay = this.add
       .text(0, 20, data.text, {
         fontSize: '14px',
@@ -493,8 +528,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 현재 점수와 게임 통계를 화면에 업데이트합니다.
-   * 총 점수, 서빙한 손님 수, 만족/불만족 손님 수를 표시합니다.
+   * 현재 점수, 통계, 타이머를 화면에 업데이트합니다.
+   * 총 점수, 서빙한 손님 수, 만족/불만족 손님 수, 남은 시간을 표시합니다.
    */
   private updateScoreDisplay() {
     if (this.scoreText) {
@@ -505,6 +540,42 @@ export class GameScene extends Phaser.Scene {
       this.statsText.setText(
         `Served: ${gameStats.servedCustomers} | Happy: ${gameStats.happyCustomers} | Angry: ${gameStats.angryCustomers}`
       );
+    }
+  }
+
+  /**
+   * 타이머 표시를 업데이트합니다.
+   * 남은 시간에 따라 색상을 변경하여 긴급함을 표시합니다.
+   */
+  private updateTimerDisplay() {
+    if (!this.timerText) return;
+
+    const timeString = getFormattedTime();
+    this.timerText.setText(timeString);
+
+    // 남은 시간에 따라 색상 변경
+    const [minutes, seconds] = timeString.split(':').map(Number);
+    const totalSeconds = minutes * 60 + seconds;
+
+    if (totalSeconds <= 30) {
+      // 30초 이하 - 빨간색 + 깜빡임
+      this.timerText.setColor('#ff4444');
+      if (!this.timerText.getData('blinking')) {
+        this.timerText.setData('blinking', true);
+        this.tweens.add({
+          targets: this.timerText,
+          alpha: 0.3,
+          duration: 500,
+          yoyo: true,
+          repeat: -1,
+        });
+      }
+    } else if (totalSeconds <= 60) {
+      // 1분 이하 - 주황색
+      this.timerText.setColor('#ff8800');
+    } else {
+      // 일반 - 흰색
+      this.timerText.setColor('#ffffff');
     }
   }
 
@@ -526,6 +597,9 @@ export class GameScene extends Phaser.Scene {
    * 시간이 지남에 따라 raw → perfect → burnt 순서로 색상이 변화합니다.
    */
   private updateAllCellsCookingStates() {
+    // 게임이 비활성화된 상태에서는 업데이트하지 않음
+    if (!gameFlow.isGameActive) return;
+
     const currentTime = Date.now();
 
     for (let row = 0; row < 3; row++) {
@@ -572,11 +646,35 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
+   * 게임 타이머를 시작하고 주기적으로 업데이트합니다.
+   * 타이머가 종료되면 자동으로 게임 종료 화면으로 전환됩니다.
+   */
+  private startGameTimer() {
+    this.time.addEvent({
+      delay: 100, // 0.1초마다 업데이트
+      callback: () => {
+        const gameEnded = updateGameTimer(Date.now());
+        this.updateTimerDisplay();
+
+        if (gameEnded) {
+          // 게임 종료 - EndScene으로 전환
+          this.scene.start('EndScene');
+        }
+      },
+      callbackScope: this,
+      loop: true,
+    });
+  }
+
+  /**
    * 손님의 인내심을 1초마다 감소시킵니다.
    * 인내심이 0에 도달하면 손님이 화나서 떠나고 새로운 손님이 등장합니다.
    * 떠난 손님은 자동으로 불만족 통계에 추가됩니다.
+   * 게임이 종료된 상태에서는 동작하지 않습니다.
    */
   private updateCustomerPatience() {
+    if (!gameFlow.isGameActive) return;
+
     if (currentCustomer.customer) {
       currentCustomer.customer.patience -= 1;
 
@@ -586,11 +684,13 @@ export class GameScene extends Phaser.Scene {
         gameStats.angryCustomers++;
         currentCustomer.customer = null;
 
-        // 새 손님 등장
-        this.time.delayedCall(1000, () => {
-          spawnNewCustomer();
-          this.updateCustomerDisplay();
-        });
+        // 새 손님 등장 (게임이 활성화된 경우에만)
+        if (gameFlow.isGameActive) {
+          this.time.delayedCall(1000, () => {
+            spawnNewCustomer();
+            this.updateCustomerDisplay();
+          });
+        }
 
         this.updateCustomerDisplay();
         this.updateScoreDisplay();
