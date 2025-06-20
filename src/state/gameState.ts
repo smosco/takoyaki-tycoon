@@ -86,8 +86,8 @@ export const gameFlow = {
 };
 
 export const TAKOYAKI_COOKING_TIMES = {
-  PERFECT_TIME: 3000, // 3초 후 완벽하게 익음
-  BURNT_TIME: 6000, // 6초 후 탐
+  PERFECT_TIME: 5000, // 5초 후 완벽하게 익음
+  BURNT_TIME: 10000, // 10초 후 탐
 } as const;
 
 /**
