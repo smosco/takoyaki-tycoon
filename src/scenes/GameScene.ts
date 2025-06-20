@@ -169,7 +169,7 @@ export class GameScene extends Phaser.Scene {
 
         const cellVisualElement = this.add
           .image(cellX, cellY, 'plate-cell')
-          .setScale(0.07)
+          .setScale(0.08)
           .setInteractive();
 
         cellVisualElement.on('pointerdown', () => this.handleIronPanCellClick(row, col));
@@ -216,8 +216,8 @@ export class GameScene extends Phaser.Scene {
               console.log(`[${row},${col}] 뒤집기 완료`);
             }
           } else if (cellState.hasOctopus && currentCookingLevel === 'perfect') {
-            // 접시로 이동
-            if (platesWithTakoyaki.length < 9) {
+            // 접시로 이동 (2x5 = 10개까지만 보관 가능)
+            if (platesWithTakoyaki.length < 10) {
               platesWithTakoyaki.push({
                 sauce: null,
                 topping: null,
@@ -237,6 +237,8 @@ export class GameScene extends Phaser.Scene {
               this.updateCellVisual(row, col);
               this.updatePlatesDisplay();
               console.log(`[${row},${col}] 접시로 이동! 총 ${platesWithTakoyaki.length}개`);
+            } else {
+              console.log('접시가 가득 찼습니다! (최대 10개)');
             }
           } else if (currentCookingLevel === 'burnt') {
             // 버리기 (반죽만 있어도 탔으면 버림)
@@ -280,7 +282,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // =====================================
-  // 접시 관련
+  // 접시 관련 (2x5 배치, 최대 10개 보관)
   // =====================================
 
   private createPlatesArea() {
@@ -290,7 +292,8 @@ export class GameScene extends Phaser.Scene {
 
     this.add.image(platesStartX + 75, platesStartY + 75, 'dish').setScale(0.25);
 
-    for (let plateIndex = 0; plateIndex < 9; plateIndex++) {
+    // 2x5 배치로 총 10개 접시
+    for (let plateIndex = 0; plateIndex < 10; plateIndex++) {
       const plateX = platesStartX + 50 + (plateIndex % 2) * plateSize;
       const plateY = platesStartY - 25 + Math.floor(plateIndex / 2) * plateSize;
 
@@ -357,7 +360,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // =====================================
-  // 손님 관련
+  // 손님 관련 (업데이트된 주문 표시)
   // =====================================
 
   private createCustomerArea() {
@@ -387,7 +390,7 @@ export class GameScene extends Phaser.Scene {
 
     // 말풍선
     const bubbleWidth = 200;
-    const bubbleHeight = 100;
+    const bubbleHeight = 120; // 더 높게 조정
     const speechBubble = this.add.graphics();
     speechBubble.fillStyle(0xffffff, 0.9);
     speechBubble.fillRoundedRect(-bubbleWidth / 2, 0, bubbleWidth, bubbleHeight, 10);
@@ -395,18 +398,29 @@ export class GameScene extends Phaser.Scene {
     speechBubble.fillTriangle(-10, bubbleHeight, 0, bubbleHeight + 10, 10, bubbleHeight);
     speechBubble.strokeTriangle(-10, bubbleHeight, 0, bubbleHeight + 10, 10, bubbleHeight);
 
-    // 주문 내용
-    let orderLines: string[] = [`총 ${order.totalQuantity}개 (소스 필수)`];
-    if (order.toppingBreakdown.negi > 0) orderLines.push(`마요 ${order.toppingBreakdown.negi}개`);
-    if (order.toppingBreakdown.katsuobushi > 0)
-      orderLines.push(`가츠오 ${order.toppingBreakdown.katsuobushi}개`);
-    if (order.toppingBreakdown.nori > 0) orderLines.push(`김 ${order.toppingBreakdown.nori}개`);
-    if (order.toppingBreakdown.none > 0)
-      orderLines.push(`토핑없이 ${order.toppingBreakdown.none}개`);
+    // 주문 내용 (남은 수량 표시)
+    let orderLines: string[] = [];
+
+    // 진행 상황 표시
+    const totalOrdered = order.totalQuantity;
+    const remaining = order.remainingQuantity;
+    const completed = totalOrdered - remaining;
+
+    orderLines.push(`총 ${totalOrdered}개 (${completed}/${totalOrdered})`);
+    orderLines.push('소스 필수');
+
+    if (order.remainingToppingBreakdown.negi > 0)
+      orderLines.push(`파 ${order.remainingToppingBreakdown.negi}개`);
+    if (order.remainingToppingBreakdown.katsuobushi > 0)
+      orderLines.push(`가츠오 ${order.remainingToppingBreakdown.katsuobushi}개`);
+    if (order.remainingToppingBreakdown.nori > 0)
+      orderLines.push(`김 ${order.remainingToppingBreakdown.nori}개`);
+    if (order.remainingToppingBreakdown.none > 0)
+      orderLines.push(`토핑없이 ${order.remainingToppingBreakdown.none}개`);
 
     const orderText = this.add
       .text(0, 15, orderLines.join('\n'), {
-        fontSize: '12px',
+        fontSize: '10px', // 더 작게 조정
         color: '#000',
         align: 'center',
         lineSpacing: 1,
@@ -487,7 +501,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // =====================================
-  // 서빙 관련
+  // 서빙 관련 (부분 서빙 지원)
   // =====================================
 
   private handleServing() {
@@ -504,13 +518,18 @@ export class GameScene extends Phaser.Scene {
       this.updatePlatesDisplay();
       this.updateScoreDisplay();
 
-      // 새 손님 등장
-      this.time.delayedCall(2000, () => {
-        if (gameFlow.isGameActive) {
-          spawnNewCustomer();
-          this.updateCustomerDisplay();
-        }
-      });
+      if (result.orderCompleted) {
+        // 주문 완료 시 새 손님 등장
+        this.time.delayedCall(2000, () => {
+          if (gameFlow.isGameActive) {
+            spawnNewCustomer();
+            this.updateCustomerDisplay();
+          }
+        });
+      } else {
+        // 부분 서빙 시 손님 정보만 업데이트
+        this.updateCustomerDisplay();
+      }
     } else {
       console.log(result.message);
     }

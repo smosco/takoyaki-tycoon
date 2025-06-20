@@ -4,14 +4,22 @@ export type CookingLevel = 'raw' | 'perfect' | 'burnt';
 
 // 손님 주문
 export interface CustomerOrder {
-  totalQuantity: number; // 총 개수 (예: 9개)
+  totalQuantity: number; // 총 개수 (예: 27개)
+  remainingQuantity: number; // 아직 받지 못한 개수
   sauceRequired: true; // 소스는 무조건 필요
   toppingBreakdown: {
-    // 토핑별 개수
+    // 토핑별 개수 (원본 주문)
     negi: number; // 파 몇 개
     katsuobushi: number; // 가츠오부시 몇 개
     nori: number; // 김 몇 개
     none: number; // 토핑 없이 몇 개
+  };
+  remainingToppingBreakdown: {
+    // 아직 받지 못한 토핑별 개수
+    negi: number;
+    katsuobushi: number;
+    nori: number;
+    none: number;
   };
   preferredCookingLevel: 'perfect'; // 무조건 완벽하게 익힌 것만
 }
@@ -152,12 +160,13 @@ export function isTopping(tool: Tool): tool is Topping {
 /**
  * 랜덤한 손님 주문을 생성합니다.
  * 총 개수를 정하고 토핑별로 개수를 랜덤하게 분배합니다.
+ * 이제 최대 27개까지 주문 가능합니다.
  *
  * @returns 생성된 랜덤 주문
  */
 export function generateRandomOrder(): CustomerOrder {
-  // TODO: 1접시 이상 주문 가능하게 만들기
-  const totalQuantity = Math.floor(Math.random() * 6) + 3;
+  // 3개부터 27개까지 주문 가능 (3x3 철판이 3개 = 최대 27개)
+  const totalQuantity = Math.floor(Math.random() * 25) + 3; // 3~27개
 
   // 토핑 개수를 랜덤하게 분배
   let remainingQuantity = totalQuantity;
@@ -189,8 +198,10 @@ export function generateRandomOrder(): CustomerOrder {
 
   return {
     totalQuantity,
+    remainingQuantity: totalQuantity, // 처음엔 전체가 남은 개수
     sauceRequired: true,
     toppingBreakdown,
+    remainingToppingBreakdown: { ...toppingBreakdown }, // 복사해서 초기화
     preferredCookingLevel: 'perfect',
   };
 }
@@ -211,7 +222,7 @@ export function createNewCustomer(): Customer {
 
 /**
  * 주문과 서빙된 타코야끼를 비교하여 점수와 만족도를 계산합니다.
- * 점수는 정확히 맞은 개수 × 100점으로 단순 계산됩니다.
+ * 초과 서빙은 무시하고, 주문 범위 내에서만 점수를 계산합니다.
  *
  * @param order - 손님의 주문 내용
  * @param servedTakoyaki - 서빙된 타코야끼 배열
@@ -222,7 +233,7 @@ export function compareOrderWithServedTakoyaki(
   servedTakoyaki: TakoyakiOnPlate[]
 ): {
   correctCount: number;
-  totalRequested: number;
+  servedCount: number;
   mood: CustomerMood;
   score: number;
   breakdown: {
@@ -237,16 +248,16 @@ export function compareOrderWithServedTakoyaki(
   console.log('주문과 서빙 비교:', order, servedTakoyaki);
 
   const breakdown = {
-    negi: { requested: order.toppingBreakdown.negi, correct: 0 },
-    katsuobushi: { requested: order.toppingBreakdown.katsuobushi, correct: 0 },
-    nori: { requested: order.toppingBreakdown.nori, correct: 0 },
-    none: { requested: order.toppingBreakdown.none, correct: 0 },
+    negi: { requested: order.remainingToppingBreakdown.negi, correct: 0 },
+    katsuobushi: { requested: order.remainingToppingBreakdown.katsuobushi, correct: 0 },
+    nori: { requested: order.remainingToppingBreakdown.nori, correct: 0 },
+    none: { requested: order.remainingToppingBreakdown.none, correct: 0 },
     sauceIssues: 0,
     cookingIssues: 0,
   };
 
-  // 서빙된 타코야끼를 토핑별로 분류
-  const servedCount = Math.min(order.totalQuantity, servedTakoyaki.length);
+  // 모든 서빙된 타코야끼를 처리
+  const servedCount = servedTakoyaki.length;
 
   for (let i = 0; i < servedCount; i++) {
     const takoyaki = servedTakoyaki[i];
@@ -263,7 +274,7 @@ export function compareOrderWithServedTakoyaki(
       continue; // 잘못 익혔으면 완전 실패
     }
 
-    // 토핑 체크
+    // 토핑 체크 (주문 범위 내에서만 카운트)
     const toppingType = takoyaki.topping || 'none';
 
     if (toppingType === 'negi' && breakdown.negi.correct < breakdown.negi.requested) {
@@ -278,47 +289,50 @@ export function compareOrderWithServedTakoyaki(
     } else if (toppingType === 'none' && breakdown.none.correct < breakdown.none.requested) {
       breakdown.none.correct++;
     }
-    // 토핑이 맞지 않거나 이미 충분하면 틀린 것으로 처리
+    // 초과분은 무시
   }
 
-  // 올바른 타코야끼 개수 계산
+  // 올바른 타코야끼 개수 계산 (주문 범위 내에서만)
   const correctCount =
     breakdown.negi.correct +
     breakdown.katsuobushi.correct +
     breakdown.nori.correct +
     breakdown.none.correct;
 
-  // 단순한 점수 계산: 맞은 개수 × 100점
+  // 점수 계산: 주문 범위 내의 정확한 개수만 × 100점
   const score = correctCount * 100;
 
-  // 만족도 계산 (점수와 별개로 완성도 기준)
-  const satisfactionRate = correctCount / order.totalQuantity;
-  let mood: CustomerMood;
+  // 만족도 계산 (주문 수량 대비 정확도만으로 판단)
+  const totalRequested = order.remainingQuantity;
+  const satisfactionRate = totalRequested > 0 ? correctCount / totalRequested : 0;
 
-  if (satisfactionRate >= 1.0) {
-    mood = 'happy'; // 100% 완성
-  } else if (satisfactionRate >= 0.7) {
-    mood = 'neutral'; // 70% 이상 완성
+  let mood: CustomerMood;
+  if (satisfactionRate >= 0.9) {
+    mood = 'happy'; // 90% 이상 정확
+  } else if (satisfactionRate >= 0.6) {
+    mood = 'neutral'; // 60% 이상 정확
   } else {
-    mood = 'angry'; // 70% 미만 완성
+    mood = 'angry'; // 60% 미만
   }
 
   console.log(
-    `점수 계산: ${correctCount}개 맞음 × 100점 = ${score}점 (${satisfactionRate * 100}% 완성)`
+    `서빙 결과: ${servedCount}개 서빙, ${correctCount}개 정확, ${score}점 (정확도: ${(
+      satisfactionRate * 100
+    ).toFixed(1)}%)`
   );
 
   return {
     correctCount,
-    totalRequested: order.totalQuantity,
+    servedCount,
     mood,
-    score: score,
+    score,
     breakdown,
   };
 }
 
 /**
  * 현재 손님에게 타코야끼를 서빙합니다.
- * 주문과 비교하여 점수를 계산하고 통계를 업데이트합니다.
+ * 초과 서빙도 지원하며, 주문이 완전히 완료될 때까지 손님이 대기합니다.
  *
  * @returns 서빙 결과 (성공 여부, 점수, 메시지 포함)
  */
@@ -326,19 +340,20 @@ export function serveToCustomer(): {
   success: boolean;
   result?: {
     correctCount: number;
-    totalRequested: number;
+    servedCount: number;
     mood: CustomerMood;
     score: number;
     breakdown: any;
   };
   message: string;
+  orderCompleted: boolean; // 주문이 완전히 완료되었는지 여부
 } {
   if (!currentCustomer.customer) {
-    return { success: false, message: '대기 중인 손님이 없습니다.' };
+    return { success: false, message: '대기 중인 손님이 없습니다.', orderCompleted: false };
   }
 
   if (platesWithTakoyaki.length === 0) {
-    return { success: false, message: '서빙할 타코야끼가 없습니다.' };
+    return { success: false, message: '서빙할 타코야끼가 없습니다.', orderCompleted: false };
   }
 
   console.log('서빙된 타코야끼:', platesWithTakoyaki);
@@ -346,29 +361,49 @@ export function serveToCustomer(): {
   // 주문과 비교
   const result = compareOrderWithServedTakoyaki(currentCustomer.customer.order, platesWithTakoyaki);
 
-  // 통계 업데이트
-  gameStats.servedCustomers++;
-  if (result.mood === 'happy') gameStats.happyCustomers++;
-  if (result.mood === 'angry') gameStats.angryCustomers++;
+  // 주문에서 서빙된 만큼 차감 (정확한 개수만)
+  const order = currentCustomer.customer.order;
+  order.remainingQuantity -= result.correctCount;
+
+  // 토핑별로도 차감 (정확한 것만)
+  order.remainingToppingBreakdown.negi -= result.breakdown.negi.correct;
+  order.remainingToppingBreakdown.katsuobushi -= result.breakdown.katsuobushi.correct;
+  order.remainingToppingBreakdown.nori -= result.breakdown.nori.correct;
+  order.remainingToppingBreakdown.none -= result.breakdown.none.correct;
 
   // 점수 추가
   gameScore.value += result.score;
 
-  // 서빙된 타코야끼 제거 (주문 수량만큼만)
-  const servedCount = Math.min(
-    currentCustomer.customer.order.totalQuantity,
-    platesWithTakoyaki.length
-  );
-  platesWithTakoyaki.splice(0, servedCount);
+  // 서빙된 타코야끼 제거
+  platesWithTakoyaki.splice(0, result.servedCount);
 
-  // 손님 제거
-  currentCustomer.customer = null;
+  // 주문 완료 체크
+  const orderCompleted = order.remainingQuantity <= 0;
 
-  return {
-    success: true,
-    result,
-    message: `${result.correctCount}/${result.totalRequested} 정확! ${result.score}점 획득!`,
-  };
+  if (orderCompleted) {
+    // 주문 완료 시 통계 업데이트
+    gameStats.servedCustomers++;
+    if (result.mood === 'happy') gameStats.happyCustomers++;
+    if (result.mood === 'angry') gameStats.angryCustomers++;
+
+    // 손님 제거
+    currentCustomer.customer = null;
+
+    return {
+      success: true,
+      result,
+      message: `주문 완료! ${result.correctCount}개 정확! +${result.score}점`,
+      orderCompleted: true,
+    };
+  } else {
+    // 부분 서빙
+    return {
+      success: true,
+      result,
+      message: `${result.correctCount}개 정확 서빙! (남은 주문: ${order.remainingQuantity}개) +${result.score}점`,
+      orderCompleted: false,
+    };
+  }
 }
 
 /**
