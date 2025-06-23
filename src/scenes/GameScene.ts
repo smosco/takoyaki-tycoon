@@ -60,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.load.image('plate-cell', 'assets/plate-cell.png');
     this.load.image('table', 'assets/table.png');
     this.load.image('dish', 'assets/dish.png');
+    this.load.image('waiting-table', 'assets/waiting-table.png');
 
     // 철판 이미지들
     this.load.image('plate-cell-batter-raw', 'assets/plate-cell-batter-raw.png');
@@ -130,7 +131,8 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     this.add.image(400, 130, 'tent').setScale(0.3);
-    this.add.image(240, 435, 'table').setScale(0.25);
+    this.add.image(650, 450, 'waiting-table').setScale(0.29).setDepth(2);
+    this.add.image(240, 435, 'table').setScale(0.25).setDepth(3);
 
     this.createTopUI();
 
@@ -269,20 +271,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createCustomerArea() {
-    // 손님 영역 배경
-    this.add.rectangle(600, 200, 180, 200, 0x333333, 0.3);
-    this.add.text(600, 120, '손님', { fontSize: '16px', color: '#fff' }).setOrigin(0.5).setDepth(3);
-
-    // 손님 컨테이너
-    this.customerContainer = this.add.container(600, 200).setDepth(5);
-
     // 임시 손님 생성 (에셋 준비 전까지)
     this.createTemporaryCustomer();
   }
 
   private createTemporaryCustomer() {
     // 임시 손님 이미지 (에셋 준비 전까지)
-    this.customerSprite = this.add.sprite(600, 300, 'customer_temp').setScale(0.6).setDepth(5);
+    this.customerSprite = this.add.sprite(600, 300, 'customer_temp').setScale(0.6).setDepth(1);
 
     // 에셋 준비되면 이 부분으로 교체
     /*
@@ -344,7 +339,7 @@ export class GameScene extends Phaser.Scene {
     this.customerSprite = this.add
       .sprite(900, 360, 'customer_temp') // 에셋 준비되면 'customer_walk'로 변경
       .setScale(0.6)
-      .setDepth(5);
+      .setDepth(1);
 
     // 에셋 준비되면 활성화
     // this.customerSprite.play('customer_walk');
@@ -373,9 +368,8 @@ export class GameScene extends Phaser.Scene {
     // 미세한 흔들림 효과
     this.tweens.add({
       targets: this.customerSprite,
-      x: this.customerSprite.x + 5,
       y: this.customerSprite.y + 5,
-      duration: 1500,
+      duration: 1000,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
@@ -594,7 +588,10 @@ export class GameScene extends Phaser.Scene {
     const ironPanStartY = 270;
     const cellSize = 80;
 
-    this.add.image(ironPanStartX + 90, ironPanStartY + 90, 'plate').setScale(0.3);
+    this.add
+      .image(ironPanStartX + 90, ironPanStartY + 90, 'plate')
+      .setScale(0.3)
+      .setDepth(4);
 
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 3; col++) {
@@ -604,6 +601,7 @@ export class GameScene extends Phaser.Scene {
         const cellVisualElement = this.add
           .image(cellX, cellY, 'plate-cell')
           .setScale(0.08)
+          .setDepth(5)
           .setInteractive();
 
         cellVisualElement.on('pointerdown', () => this.handleIronPanCellClick(row, col));
@@ -724,7 +722,10 @@ export class GameScene extends Phaser.Scene {
     const platesStartY = 290;
     const plateSize = 50;
 
-    this.add.image(platesStartX + 75, platesStartY + 75, 'dish').setScale(0.25);
+    this.add
+      .image(platesStartX + 75, platesStartY + 75, 'dish')
+      .setScale(0.25)
+      .setDepth(5);
 
     // 2x5 배치로 총 10개 접시
     for (let plateIndex = 0; plateIndex < 10; plateIndex++) {
@@ -734,7 +735,8 @@ export class GameScene extends Phaser.Scene {
       const plateVisualElement = this.add
         .image(plateX, plateY, 'tako-position')
         .setScale(0.07)
-        .setInteractive();
+        .setInteractive()
+        .setDepth(7);
 
       const plateTextElement = this.add
         .text(plateX, plateY, '', {
@@ -879,7 +881,7 @@ export class GameScene extends Phaser.Scene {
 
     if (result.success && result.result) {
       console.log(result.message);
-      this.showCustomerFeedback(result.result.mood, result.result.score);
+      this.showCustomerFeedback(result.result.mood);
       this.updatePlatesDisplay();
       this.updateScoreDisplay();
 
@@ -902,7 +904,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private showCustomerFeedback(mood: 'happy' | 'neutral' | 'angry', score: number) {
+  private showCustomerFeedback(mood: 'happy' | 'neutral' | 'angry') {
     if (!this.customerSprite) return;
 
     // 에셋 준비되면 해당 애니메이션 재생
@@ -942,32 +944,6 @@ export class GameScene extends Phaser.Scene {
         this.customerSprite.clearTint();
         // this.customerSprite.play('customer_idle'); // 에셋 준비되면 활성화
       }
-    });
-
-    // 기존 피드백 표시 로직...
-    if (!this.customerContainer) return;
-
-    this.customerContainer.removeAll(true);
-
-    const moodData = {
-      happy: { emoji: '😊', text: `+${score}점!` },
-      neutral: { emoji: '😐', text: `+${score}점` },
-      angry: { emoji: '😠', text: `+${score}점...` },
-    };
-
-    const data = moodData[mood];
-    const moodSprite = this.add.text(0, -20, data.emoji, { fontSize: '32px' }).setOrigin(0.5);
-    const scoreDisplay = this.add.text(0, 20, data.text, { fontSize: '14px' }).setOrigin(0.5);
-
-    this.customerContainer.add([moodSprite, scoreDisplay]);
-
-    this.tweens.add({
-      targets: this.customerContainer,
-      scaleX: 1.2,
-      scaleY: 1.2,
-      duration: 300,
-      yoyo: true,
-      ease: 'Back.easeInOut',
     });
   }
 

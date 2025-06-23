@@ -40,14 +40,16 @@ export class ButtonPanel {
       const toolButton = this.scene.add
         .image(startX + buttonIndex * 80, startY, 'button')
         .setScale(0.2)
-        .setInteractive();
+        .setInteractive()
+        .setDepth(6);
 
       const toolButtonText = this.scene.add
         .text(startX + buttonIndex * 80, startY, toolData.label, {
           fontSize: '14px',
           color: '#000',
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(6);
 
       this.toolButtonElements.push(toolButton);
       this.toolButtonTexts.push(toolButtonText);
@@ -62,14 +64,16 @@ export class ButtonPanel {
     const serveButton = this.scene.add
       .image(startX + 7 * 80, startY, 'button')
       .setScale(0.2)
-      .setInteractive();
+      .setInteractive()
+      .setDepth(6);
 
     this.scene.add
       .text(startX + 7 * 80, startY, '서빙', {
         fontSize: '14px',
         color: '#000',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(6);
 
     serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
@@ -89,14 +93,16 @@ export class ButtonPanel {
       const toppingButton = this.scene.add
         .image(startX + (4 + toppingIndex) * 80, startY, 'button')
         .setScale(0.2)
-        .setInteractive();
+        .setInteractive()
+        .setDepth(6);
 
       const toppingButtonText = this.scene.add
         .text(startX + (4 + toppingIndex) * 80, startY, toppingData.label, {
           fontSize: '12px',
           color: '#000',
         })
-        .setOrigin(0.5);
+        .setOrigin(0.5)
+        .setDepth(6);
 
       this.toolButtonElements.push(toppingButton);
       this.toolButtonTexts.push(toppingButtonText);
