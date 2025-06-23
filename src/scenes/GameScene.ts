@@ -38,6 +38,22 @@ export class GameScene extends Phaser.Scene {
     this.add.image(400, 130, 'tent').setScale(0.3);
     this.add.image(650, 430, 'waiting-table').setScale(0.29).setDepth(2);
     this.add.image(240, 435, 'table').setScale(0.25).setDepth(3);
+
+    this.add.particles(0, 0, 'sakura', {
+      x: { min: 0, max: this.scale.width },
+      y: 0,
+      lifespan: 8000,
+      speedY: { min: 30, max: 80 },
+      speedX: { min: -30, max: 30 },
+      scale: { start: 0.1, end: 0.2 },
+      alpha: { start: 1, end: 0 },
+      angle: { min: -30, max: 30 },
+      rotate: { min: -90, max: 90 },
+      gravityY: 5,
+      frequency: 300,
+      quantity: 1,
+      blendMode: 'NORMAL',
+    });
   }
 
   private initializeManagers() {

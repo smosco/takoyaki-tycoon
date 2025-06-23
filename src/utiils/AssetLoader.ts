@@ -27,6 +27,7 @@ export class AssetLoader {
     scene.load.image('table', 'assets/table.png');
     scene.load.image('dish', 'assets/dish.png');
     scene.load.image('waiting-table', 'assets/waiting-table.png');
+    scene.load.image('sakura', 'assets/sakura.png');
   }
 
   private static loadIronPanAssets(scene: Phaser.Scene) {
