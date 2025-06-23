@@ -89,7 +89,7 @@ export class CustomerManager {
       currentCustomer.customer.order
     );
 
-    this.showProductionPanel(570, 390, currentCustomer.customer.order);
+    this.showProductionPanel(640, 470, currentCustomer.customer.order);
   }
 
   private showOrderBubble(x: number, y: number, order: CustomerOrder) {

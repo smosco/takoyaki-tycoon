@@ -38,13 +38,13 @@ export class ButtonPanel {
     mainToolsData.forEach((toolData, buttonIndex) => {
       // TODO: 선택됐을 때 표시
       const toolButton = this.scene.add
-        .image(startX + buttonIndex * 80, startY, 'button')
+        .image(startX + buttonIndex * 75, startY, 'button')
         .setScale(0.2)
         .setInteractive()
         .setDepth(6);
 
       const toolButtonImage = this.scene.add
-        .image(startX + buttonIndex * 80, startY, toolData.image)
+        .image(startX + buttonIndex * 75, startY, toolData.image)
         .setScale(0.05)
         .setOrigin(0.5)
         .setDepth(6);
@@ -60,13 +60,13 @@ export class ButtonPanel {
     });
 
     const serveButton = this.scene.add
-      .image(startX + 7 * 80, startY, 'button')
+      .image(startX + 7 * 75, startY, 'button')
       .setScale(0.2)
       .setInteractive()
       .setDepth(6);
 
     this.scene.add
-      .image(startX + 7 * 80, startY, 'tool-serve')
+      .image(startX + 7 * 75, startY, 'tool-serve')
       .setScale(0.05)
       .setOrigin(0.5)
       .setDepth(6);
@@ -87,13 +87,13 @@ export class ButtonPanel {
 
     toppingsData.forEach((toppingData, toppingIndex) => {
       const toppingButton = this.scene.add
-        .image(startX + (4 + toppingIndex) * 80, startY, 'button')
+        .image(startX + (4 + toppingIndex) * 75, startY, 'button')
         .setScale(0.2)
         .setInteractive()
         .setDepth(6);
 
       const toppingButtonImage = this.scene.add
-        .image(startX + (4 + toppingIndex) * 80, startY, toppingData.image)
+        .image(startX + (4 + toppingIndex) * 75, startY, toppingData.image)
         .setScale(0.05)
         .setOrigin(0.5)
         .setDepth(6);

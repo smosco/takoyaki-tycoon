@@ -65,7 +65,7 @@ export class GameScene extends Phaser.Scene {
 
     this.customerManager = new CustomerManager(this, this.platesManager);
 
-    new ButtonPanel(this, 70, 560, () => this.handleServing());
+    new ButtonPanel(this, 50, 560, () => this.handleServing());
   }
 
   private startGameSystems() {
