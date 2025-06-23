@@ -331,7 +331,7 @@ export function compareOrderWithServedTakoyaki(
   // 보너스 점수 계산 (주문 완료 시에만)
   let bonusScore = 0;
   if (isOrderCompleted && finalMood) {
-    bonusScore = calculateCompletionBonus(correctCount, finalMood);
+    bonusScore = calculateCompletionBonus(finalMood, order.totalQuantity);
   }
 
   const totalScore = baseScore + bonusScore;
@@ -359,31 +359,23 @@ export function compareOrderWithServedTakoyaki(
 /**
  * 주문 완료 시 기분에 따른 보너스 점수를 계산합니다.
  *
- * @param correctCount - 정확하게 서빙한 개수
  * @param mood - 서빙 완료 시점의 손님 기분
+ * @param totalCount - 전체 주문 개수
  * @returns 보너스 점수
  */
-export function calculateCompletionBonus(
-  correctCount: number,
-  mood: 'happy' | 'neutral' | 'angry'
-): number {
+export function calculateCompletionBonus(mood: CustomerMood, totalCount: number): number {
   const bonusPerItem = 50; // 개당 보너스 점수
 
   switch (mood) {
     case 'happy':
-      return correctCount * bonusPerItem; // 개당 +50점
-    case 'neutral':
-      return Math.floor(correctCount * bonusPerItem * 0.5); // 개당 +25점
-    case 'angry':
-      return 0; // 보너스 없음
+      return totalCount * bonusPerItem; // 개당 +50점
+    // 향후 다른 기분별 보너스가 필요하면 추가
     default:
       return 0;
   }
 }
 
-/**
- * 현재 손님에게 타코야끼를 서빙합니다.
- * 기분은 인내심 기반으로만 결정되며, 주문 완료 시 보너스가 적용됩니다.
+/* 기분은 인내심 기반으로만 결정되며, 주문 완료 시 보너스가 적용됩니다.
  *
  * @param customerMood - 현재 손님의 기분 (CustomerManager에서 전달)
  * @returns 서빙 결과 (성공 여부, 점수, 메시지 포함)
