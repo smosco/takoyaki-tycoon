@@ -38,34 +38,15 @@ export class GameScene extends Phaser.Scene {
     this.add.image(400, 130, 'tent').setScale(0.3);
     this.add.image(650, 430, 'waiting-table').setScale(0.29).setDepth(2);
     this.add.image(240, 435, 'table').setScale(0.25).setDepth(3);
-
-    this.add.particles(0, 0, 'sakura', {
-      x: { min: 0, max: this.scale.width },
-      y: 0,
-      lifespan: 8000,
-      speedY: { min: 30, max: 80 },
-      speedX: { min: -30, max: 30 },
-      scale: { start: 0.1, end: 0.2 },
-      alpha: { start: 1, end: 0 },
-      angle: { min: -30, max: 30 },
-      rotate: { min: -90, max: 90 },
-      gravityY: 5,
-      frequency: 300,
-      quantity: 1,
-      blendMode: 'NORMAL',
-    });
   }
 
   private initializeManagers() {
     this.topUI = new TopUI(this);
     this.platesManager = new PlatesManager(this);
-
-    // 중요: PlatesManager를 IronPanManager에 넘겨야 접시에 타코야끼가 보임
     this.ironPanManager = new IronPanManager(this, this.platesManager);
-
     this.customerManager = new CustomerManager(this, this.platesManager);
 
-    new ButtonPanel(this, 50, 560, () => this.handleServing());
+    new ButtonPanel(this, 70, 560, () => this.handleServing());
   }
 
   private startGameSystems() {
@@ -81,11 +62,13 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    const result = serveToCustomer();
+    // 현재 손님의 기분을 가져와서 serveToCustomer에 전달
+    const currentMood = this.customerManager.getCurrentMood();
+    const result = serveToCustomer(currentMood);
 
     if (result.success && result.result) {
       console.log(result.message);
-      this.customerManager.showFeedback(result.result.mood);
+
       this.platesManager.updateDisplay();
       this.topUI.updateScore();
 
