@@ -38,12 +38,12 @@ export class ButtonPanel {
     mainToolsData.forEach((toolData, buttonIndex) => {
       // TODO: 선택됐을 때 표시
       const toolButton = this.scene.add
-        .image(startX + buttonIndex * 90, startY, 'button')
-        .setScale(0.25)
+        .image(startX + buttonIndex * 80, startY, 'button')
+        .setScale(0.2)
         .setInteractive();
 
       const toolButtonText = this.scene.add
-        .text(startX + buttonIndex * 90, startY, toolData.label, {
+        .text(startX + buttonIndex * 80, startY, toolData.label, {
           fontSize: '14px',
           color: '#000',
         })
@@ -60,12 +60,12 @@ export class ButtonPanel {
     });
 
     const serveButton = this.scene.add
-      .image(startX + 7 * 90, startY, 'button')
-      .setScale(0.25)
+      .image(startX + 7 * 80, startY, 'button')
+      .setScale(0.2)
       .setInteractive();
 
     this.scene.add
-      .text(startX + 7 * 90, startY, '서빙', {
+      .text(startX + 7 * 80, startY, '서빙', {
         fontSize: '14px',
         color: '#000',
       })
@@ -87,12 +87,12 @@ export class ButtonPanel {
 
     toppingsData.forEach((toppingData, toppingIndex) => {
       const toppingButton = this.scene.add
-        .image(startX + (4 + toppingIndex) * 90, startY, 'button')
-        .setScale(0.25)
+        .image(startX + (4 + toppingIndex) * 80, startY, 'button')
+        .setScale(0.2)
         .setInteractive();
 
       const toppingButtonText = this.scene.add
-        .text(startX + (4 + toppingIndex) * 90, startY, toppingData.label, {
+        .text(startX + (4 + toppingIndex) * 80, startY, toppingData.label, {
           fontSize: '12px',
           color: '#000',
         })

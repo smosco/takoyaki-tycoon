@@ -23,17 +23,26 @@ export class GameScene extends Phaser.Scene {
   private plateTextElements: Phaser.GameObjects.Text[] = [];
   private ironPanVisualCells: Phaser.GameObjects.Image[] = [];
 
-  // 손님 UI 요소들
+  // UI 요소들
   private customerContainer: Phaser.GameObjects.Container | null = null;
   private scoreText: Phaser.GameObjects.Text | null = null;
-  private statsText: Phaser.GameObjects.Text | null = null;
   private timerText: Phaser.GameObjects.Text | null = null;
+  private progressBarWidth = 250;
+  private progressBarHeight = 20;
+  private progressBarX = 300;
+  private progressBarY = 25;
+  private progressBarFill: Phaser.GameObjects.Graphics | null = null;
+  private progressBg: Phaser.GameObjects.Graphics | null = null;
+
+  // 손님 애니메이션 관련
+  private customerSprite: Phaser.GameObjects.Sprite | null = null;
 
   constructor() {
     super('GameScene');
   }
 
   preload() {
+    // 기존 에셋들
     this.load.image('button', 'assets/button.png');
     this.load.image('tent', 'assets/tent.png');
     this.load.image('plate', 'assets/plate.png');
@@ -45,7 +54,6 @@ export class GameScene extends Phaser.Scene {
     this.load.image('plate-cell-batter-raw', 'assets/plate-cell-batter-raw.png');
     this.load.image('plate-cell-batter-perfect', 'assets/plate-cell-batter-perfect.png');
     this.load.image('plate-cell-batter-burnt', 'assets/plate-cell-batter-burnt.png');
-
     this.load.image('plate-cell-batter-raw-octopus', 'assets/plate-cell-batter-raw-octopus.png');
     this.load.image(
       'plate-cell-batter-perfect-octopus',
@@ -55,7 +63,6 @@ export class GameScene extends Phaser.Scene {
       'plate-cell-batter-burnt-octopus',
       'assets/plate-cell-batter-burnt-octopus.png'
     );
-
     this.load.image('plate-cell-batter-raw-flipped', 'assets/plate-cell-batter-raw-flipped.png');
     this.load.image(
       'plate-cell-batter-perfect-flipped',
@@ -73,23 +80,273 @@ export class GameScene extends Phaser.Scene {
     this.load.image('tako-perfect-sauce-negi', 'assets/tako-perfect-sauce-negi.png');
     this.load.image('tako-perfect-sauce-katsuobushi', 'assets/tako-perfect-sauce-katsuobushi.png');
     this.load.image('tako-perfect-sauce-nori', 'assets/tako-perfect-sauce-nori.png');
+
+    // ========================================
+    // 손님 에셋
+    // ========================================
+
+    // 임시 이미지 (에셋 준비 전까지)
+    this.load.image('customer_temp', 'assets/cat.png'); // 임시 손님 이미지
+
+    // 실제 에셋 로딩 (준비되면 주석 해제)
+    /*
+    this.load.spritesheet('customer_idle', 'assets/customer_idle.png', {
+      frameWidth: 64,   // 실제 프레임 크기에 맞게 조정
+      frameHeight: 96
+    });
+
+    this.load.spritesheet('customer_walk', 'assets/customer_walk.png', {
+      frameWidth: 64,
+      frameHeight: 96
+    });
+
+    this.load.spritesheet('customer_talk', 'assets/customer_talk.png', {
+      frameWidth: 64,
+      frameHeight: 96
+    });
+
+    this.load.spritesheet('customer_happy', 'assets/customer_happy.png', {
+      frameWidth: 64,
+      frameHeight: 96
+    });
+
+    this.load.spritesheet('customer_angry', 'assets/customer_angry.png', {
+      frameWidth: 64,
+      frameHeight: 96
+    });
+    */
   }
 
   create() {
-    this.add.image(400, 100, 'tent').setScale(0.3).setDepth(1);
-    this.add.image(250, 405, 'table').setScale(0.25);
+    this.add.image(400, 130, 'tent').setScale(0.3);
+    this.add.image(240, 435, 'table').setScale(0.25);
+
+    this.createTopUI();
 
     this.createIronPanGrid();
     this.createPlatesArea();
     this.createCustomerArea();
-    this.createUI();
 
-    new ButtonPanel(this, 80, 540, () => this.handleServing());
+    new ButtonPanel(this, 70, 560, () => this.handleServing());
+
+    // 손님 애니메이션 설정 (에셋 준비되면 주석 해제)
+    // this.createCustomerAnimations();
 
     startGame();
     this.startRealtimeCookingUpdates();
     this.startCustomerSystem();
     this.startGameTimer();
+  }
+
+  // ========================================
+  // 상단 레벨, 타이머, 점수 UI
+  // ========================================
+
+  private createTopUI() {
+    const bg = this.add.graphics();
+    bg.fillStyle(0x1e1b18, 0.5);
+    bg.fillRoundedRect(10, 10, 780, 50, 48);
+    bg.setDepth(10);
+
+    const border = this.add.graphics();
+    border.lineStyle(3, 0xfac36e);
+    border.strokeRoundedRect(10, 10, 780, 50, 48);
+    border.setDepth(11);
+
+    // 레벨
+    this.add
+      .text(40, 27, '레벨', {
+        fontSize: '18px',
+        color: '#FFD700',
+      })
+      .setDepth(12);
+
+    this.add
+      .text(90, 23, '1', {
+        fontSize: '24px',
+        color: '#fff',
+      })
+      .setDepth(12);
+
+    // 타이머
+    this.timerText = this.add
+      .text(200, 23, '03:00', {
+        fontSize: '24px',
+        color: '#fff',
+      })
+      .setDepth(12);
+
+    // 점수
+    this.add
+      .text(620, 27, '점수', {
+        fontSize: '18px',
+        color: '#FFD700',
+      })
+      .setDepth(12);
+
+    this.scoreText = this.add
+      .text(670, 23, '0', {
+        fontSize: '24px',
+        color: '#fff',
+      })
+      .setDepth(12);
+
+    // 진행 바 배경
+    this.progressBg = this.add.graphics();
+    this.progressBg.fillStyle(0x333333, 1);
+    this.progressBg.fillRoundedRect(
+      this.progressBarX,
+      this.progressBarY,
+      this.progressBarWidth,
+      this.progressBarHeight,
+      10
+    );
+    this.progressBg.setDepth(11);
+
+    // fill용 Graphics
+    this.progressBarFill = this.add.graphics();
+    this.progressBarFill.setDepth(12);
+  }
+
+  // ========================================
+  // 손님 에셋 애니메이션 구조
+  // ========================================
+
+  private createCustomerAnimations() {
+    // 실제 에셋이 준비되면 이 부분 활성화
+    /*
+    // 대기 애니메이션
+    this.anims.create({
+      key: 'customer_idle',
+      frames: this.anims.generateFrameNumbers('customer_idle', { start: 0, end: 3 }),
+      frameRate: 2,
+      repeat: -1
+    });
+
+    // 걷기 애니메이션
+    this.anims.create({
+      key: 'customer_walk',
+      frames: this.anims.generateFrameNumbers('customer_walk', { start: 0, end: 5 }),
+      frameRate: 8,
+      repeat: -1
+    });
+
+    // 말하기 애니메이션
+    this.anims.create({
+      key: 'customer_talk',
+      frames: this.anims.generateFrameNumbers('customer_talk', { start: 0, end: 7 }),
+      frameRate: 6,
+      repeat: 3 // 3번 반복 후 idle로 복귀
+    });
+
+    // 기쁜 애니메이션
+    this.anims.create({
+      key: 'customer_happy',
+      frames: this.anims.generateFrameNumbers('customer_happy', { start: 0, end: 4 }),
+      frameRate: 8,
+      repeat: 2
+    });
+
+    // 화난 애니메이션
+    this.anims.create({
+      key: 'customer_angry',
+      frames: this.anims.generateFrameNumbers('customer_angry', { start: 0, end: 4 }),
+      frameRate: 6,
+      repeat: 2
+    });
+    */
+  }
+
+  private createCustomerArea() {
+    // 손님 영역 배경
+    this.add.rectangle(600, 200, 180, 200, 0x333333, 0.3);
+    this.add.text(600, 120, '손님', { fontSize: '16px', color: '#fff' }).setOrigin(0.5).setDepth(3);
+
+    // 손님 컨테이너
+    this.customerContainer = this.add.container(600, 200).setDepth(5);
+
+    // 임시 손님 생성 (에셋 준비 전까지)
+    this.createTemporaryCustomer();
+  }
+
+  private createTemporaryCustomer() {
+    // 임시 손님 이미지 (에셋 준비 전까지)
+    this.customerSprite = this.add.sprite(600, 300, 'customer_temp').setScale(0.6).setDepth(5);
+
+    // 에셋 준비되면 이 부분으로 교체
+    /*
+    this.customerSprite = this.add.sprite(600, 300, 'customer_idle')
+      .setScale(1.5)
+      .setDepth(5);
+
+    this.customerSprite.play('customer_idle');
+    */
+  }
+
+  // 손님 등장 애니메이션
+  private spawnCustomerWithAnimation() {
+    if (this.customerSprite) {
+      this.customerSprite.destroy();
+    }
+
+    // 화면 오른쪽에서 등장
+    this.customerSprite = this.add
+      .sprite(900, 360, 'customer_temp') // 에셋 준비되면 'customer_walk'로 변경
+      .setScale(0.6)
+      .setDepth(5);
+
+    // 에셋 준비되면 활성화
+    // this.customerSprite.play('customer_walk');
+
+    // 걸어나오는 애니메이션
+    this.tweens.add({
+      targets: this.customerSprite,
+      x: 650,
+      duration: 1000,
+      ease: 'Power2.easeOut',
+      onComplete: () => {
+        this.startCustomerIdleAnimation();
+        this.showCustomerOrder();
+      },
+    });
+
+    spawnNewCustomer();
+  }
+
+  private startCustomerIdleAnimation() {
+    if (!this.customerSprite) return;
+
+    // 에셋 준비되면 활성화
+    // this.customerSprite.play('customer_idle');
+
+    // 미세한 흔들림 효과
+    this.tweens.add({
+      targets: this.customerSprite,
+      x: this.customerSprite.x + 5,
+      y: this.customerSprite.y + 5,
+      duration: 1500,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+
+  private showCustomerOrder() {
+    if (!this.customerSprite) return;
+
+    // 말하기 애니메이션 (에셋 준비되면 활성화)
+    // this.customerSprite.play('customer_talk');
+
+    // 2초 후 idle로 복귀 (에셋 준비되면 활성화)
+    /*
+    this.time.delayedCall(2000, () => {
+      if (this.customerSprite) {
+        this.customerSprite.play('customer_idle');
+      }
+    });
+    */
+
+    this.updateCustomerDisplay();
   }
 
   // =====================================
@@ -156,8 +413,8 @@ export class GameScene extends Phaser.Scene {
   // =====================================
 
   private createIronPanGrid() {
-    const ironPanStartX = 90;
-    const ironPanStartY = 240;
+    const ironPanStartX = 70;
+    const ironPanStartY = 270;
     const cellSize = 80;
 
     this.add.image(ironPanStartX + 90, ironPanStartY + 90, 'plate').setScale(0.3);
@@ -286,8 +543,8 @@ export class GameScene extends Phaser.Scene {
   // =====================================
 
   private createPlatesArea() {
-    const platesStartX = 340;
-    const platesStartY = 260;
+    const platesStartX = 320;
+    const platesStartY = 290;
     const plateSize = 50;
 
     this.add.image(platesStartX + 75, platesStartY + 75, 'dish').setScale(0.25);
@@ -363,12 +620,6 @@ export class GameScene extends Phaser.Scene {
   // 손님 관련 (업데이트된 주문 표시)
   // =====================================
 
-  private createCustomerArea() {
-    this.add.rectangle(600, 150, 180, 120, 0x333333, 0.8);
-    this.add.text(600, 80, '손님', { fontSize: '16px', color: '#fff' }).setOrigin(0.5);
-    this.customerContainer = this.add.container(600, 150);
-  }
-
   private updateCustomerDisplay() {
     if (!this.customerContainer) return;
 
@@ -430,57 +681,39 @@ export class GameScene extends Phaser.Scene {
     this.customerContainer.add([customerAvatar, speechBubble, orderText]);
   }
 
-  // =====================================
-  // UI 관련
-  // =====================================
-
-  private createUI() {
-    this.timerText = this.add
-      .text(400, 60, '03:00', {
-        fontSize: '28px',
-        color: '#fff',
-        fontFamily: 'Arial Bold',
-        backgroundColor: '#333333',
-        padding: { x: 15, y: 8 },
-      })
-      .setOrigin(0.5);
-
-    this.scoreText = this.add.text(50, 50, 'Score: 0', {
-      fontSize: '18px',
-      color: '#fff',
-    });
-
-    this.statsText = this.add.text(50, 80, 'Served: 0 | Happy: 0 | Angry: 0', {
-      fontSize: '14px',
-      color: '#fff',
-    });
-
-    this.updateCustomerDisplay();
-    this.updateScoreDisplay();
-    this.updateTimerDisplay();
-  }
-
-  private updateScoreDisplay() {
-    if (this.scoreText) {
-      this.scoreText.setText(`Score: ${gameScore.value}`);
-    }
-
-    if (this.statsText) {
-      this.statsText.setText(
-        `Served: ${gameStats.servedCustomers} | Happy: ${gameStats.happyCustomers} | Angry: ${gameStats.angryCustomers}`
-      );
-    }
-  }
+  // ========================================
+  // UI 업데이트 함수들
+  // ========================================
 
   private updateTimerDisplay() {
-    if (!this.timerText) return;
+    if (!this.timerText || !this.progressBarFill) return;
 
     const timeString = getFormattedTime();
     this.timerText.setText(timeString);
 
     const [minutes, seconds] = timeString.split(':').map(Number);
     const totalSeconds = minutes * 60 + seconds;
+    const maxTime = 180;
+    const ratio = Phaser.Math.Clamp(totalSeconds / maxTime, 0, 1);
 
+    // TODO: 진행바 그리기 (오른쪽 노랑 → 왼쪽 빨강 그라데이션)
+    this.progressBarFill.clear();
+    this.progressBarFill.fillGradientStyle(
+      0xffd700, // gold (right)
+      0xff4444, // red (left)
+      0xffd700,
+      0xff4444,
+      1
+    );
+    this.progressBarFill.fillRoundedRect(
+      this.progressBarX,
+      this.progressBarY,
+      this.progressBarWidth * ratio,
+      this.progressBarHeight,
+      10
+    );
+
+    // 텍스트 색상/애니메이션
     if (totalSeconds <= 30) {
       this.timerText.setColor('#ff4444');
       if (!this.timerText.getData('blinking')) {
@@ -493,10 +726,30 @@ export class GameScene extends Phaser.Scene {
           repeat: -1,
         });
       }
-    } else if (totalSeconds <= 60) {
-      this.timerText.setColor('#ff8800');
     } else {
       this.timerText.setColor('#ffffff');
+    }
+
+    // 펌핑 효과
+    if (totalSeconds <= 15 && !this.timerText.getData('pumping')) {
+      this.timerText.setData('pumping', true);
+      this.tweens.add({
+        targets: this.timerText,
+        scale: 1.2,
+        duration: 300,
+        yoyo: true,
+        repeat: -1,
+      });
+    } else if (totalSeconds > 15 && this.timerText.getData('pumping')) {
+      this.timerText.setData('pumping', false);
+      this.timerText.setScale(1);
+    }
+  }
+
+  private updateScoreDisplay() {
+    if (this.scoreText) {
+      const formatted = gameScore.value.toString();
+      this.scoreText.setText(formatted);
     }
   }
 
@@ -522,8 +775,7 @@ export class GameScene extends Phaser.Scene {
         // 주문 완료 시 새 손님 등장
         this.time.delayedCall(2000, () => {
           if (gameFlow.isGameActive) {
-            spawnNewCustomer();
-            this.updateCustomerDisplay();
+            this.spawnCustomerWithAnimation();
           }
         });
       } else {
@@ -536,6 +788,48 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showCustomerFeedback(mood: 'happy' | 'neutral' | 'angry', score: number) {
+    if (!this.customerSprite) return;
+
+    // 에셋 준비되면 해당 애니메이션 재생
+    /*
+    if (mood === 'happy') {
+      this.customerSprite.play('customer_happy');
+    } else if (mood === 'angry') {
+      this.customerSprite.play('customer_angry');
+    }
+    */
+
+    // 임시 효과 (에셋 준비 전까지)
+    if (mood === 'happy') {
+      this.tweens.add({
+        targets: this.customerSprite,
+        y: this.customerSprite.y - 20,
+        duration: 200,
+        yoyo: true,
+        ease: 'Quad.easeOut',
+      });
+      this.customerSprite.setTint(0xffff99);
+    } else if (mood === 'angry') {
+      this.tweens.add({
+        targets: this.customerSprite,
+        x: this.customerSprite.x + 10,
+        duration: 100,
+        yoyo: true,
+        repeat: 5,
+        ease: 'Power2.easeInOut',
+      });
+      this.customerSprite.setTint(0xff6666);
+    }
+
+    // 1초 후 원상복귀
+    this.time.delayedCall(1000, () => {
+      if (this.customerSprite) {
+        this.customerSprite.clearTint();
+        // this.customerSprite.play('customer_idle'); // 에셋 준비되면 활성화
+      }
+    });
+
+    // 기존 피드백 표시 로직...
     if (!this.customerContainer) return;
 
     this.customerContainer.removeAll(true);
@@ -547,9 +841,7 @@ export class GameScene extends Phaser.Scene {
     };
 
     const data = moodData[mood];
-
     const moodSprite = this.add.text(0, -20, data.emoji, { fontSize: '32px' }).setOrigin(0.5);
-
     const scoreDisplay = this.add.text(0, 20, data.text, { fontSize: '14px' }).setOrigin(0.5);
 
     this.customerContainer.add([moodSprite, scoreDisplay]);
@@ -578,8 +870,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private startCustomerSystem() {
-    spawnNewCustomer();
-    this.updateCustomerDisplay();
+    this.spawnCustomerWithAnimation();
 
     this.time.addEvent({
       delay: 1000,
@@ -618,8 +909,7 @@ export class GameScene extends Phaser.Scene {
 
         if (gameFlow.isGameActive) {
           this.time.delayedCall(1000, () => {
-            spawnNewCustomer();
-            this.updateCustomerDisplay();
+            this.spawnCustomerWithAnimation();
           });
         }
 
