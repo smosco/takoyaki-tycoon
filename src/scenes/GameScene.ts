@@ -54,6 +54,7 @@ export class GameScene extends Phaser.Scene {
 
   preload() {
     // 기존 에셋들
+    this.load.image('background', 'assets/background.png');
     this.load.image('button', 'assets/button.png');
     this.load.image('tent', 'assets/tent.png');
     this.load.image('plate', 'assets/plate.png');
@@ -140,8 +141,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.add.image(400, 300, 'background').setScale(0.8).setDepth(0);
     this.add.image(400, 130, 'tent').setScale(0.3);
-    this.add.image(650, 450, 'waiting-table').setScale(0.29).setDepth(2);
+    this.add.image(650, 430, 'waiting-table').setScale(0.29).setDepth(2);
     this.add.image(240, 435, 'table').setScale(0.25).setDepth(3);
 
     this.createTopUI();
