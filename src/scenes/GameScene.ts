@@ -15,6 +15,7 @@ import {
   gameFlow,
   type IronPanCellState,
   type CookingLevel,
+  type CustomerOrder,
 } from '../state/gameState';
 import { ButtonPanel } from '../ui/ButtonPanel';
 
@@ -36,6 +37,16 @@ export class GameScene extends Phaser.Scene {
 
   // 손님 애니메이션 관련
   private customerSprite: Phaser.GameObjects.Sprite | null = null;
+
+  // 패널 관리 (메모리 누수 방지)
+  private currentOrderBubble: {
+    graphics: Phaser.GameObjects.Graphics;
+    text: Phaser.GameObjects.Text;
+  } | null = null;
+  private currentProductionPanel: {
+    panel: Phaser.GameObjects.Graphics;
+    text: Phaser.GameObjects.Text;
+  } | null = null;
 
   constructor() {
     super('GameScene');
@@ -283,8 +294,48 @@ export class GameScene extends Phaser.Scene {
     */
   }
 
+  // ========================================
+  // 패널 관리 함수들 (메모리 누수 방지)
+  // ========================================
+
+  /**
+   * 기존 주문 말풍선을 제거합니다.
+   */
+  private clearOrderBubble() {
+    if (this.currentOrderBubble) {
+      this.currentOrderBubble.graphics.destroy();
+      this.currentOrderBubble.text.destroy();
+      this.currentOrderBubble = null;
+    }
+  }
+
+  /**
+   * 기존 남은 주문 내역 확인 패널을 제거합니다.
+   */
+  private clearProductionPanel() {
+    if (this.currentProductionPanel) {
+      this.currentProductionPanel.panel.destroy();
+      this.currentProductionPanel.text.destroy();
+      this.currentProductionPanel = null;
+    }
+  }
+
+  /**
+   * 모든 고객 관련 UI를 정리합니다.
+   */
+  private clearAllCustomerUI() {
+    this.clearOrderBubble();
+    this.clearProductionPanel();
+    if (this.customerContainer) {
+      this.customerContainer.removeAll(true);
+    }
+  }
+
   // 손님 등장 애니메이션
   private spawnCustomerWithAnimation() {
+    // 기존 UI 정리
+    this.clearAllCustomerUI();
+
     if (this.customerSprite) {
       this.customerSprite.destroy();
     }
@@ -332,7 +383,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showCustomerOrder() {
-    if (!this.customerSprite) return;
+    if (!this.customerSprite || !currentCustomer.customer) return;
 
     // 말하기 애니메이션 (에셋 준비되면 활성화)
     // this.customerSprite.play('customer_talk');
@@ -346,7 +397,133 @@ export class GameScene extends Phaser.Scene {
     });
     */
 
-    this.updateCustomerDisplay();
+    // 주문 말풍선 표시 (2초간만)
+    this.showOrderBubble(
+      this.customerSprite.x - 200,
+      this.customerSprite.y - 200,
+      currentCustomer.customer.order
+    );
+
+    // 생산 패널 표시 (계속 유지)
+    this.showProductionPanel(570, 390, currentCustomer.customer.order);
+  }
+
+  /**
+   * 주문 말풍선을 표시합니다. (2초간만 표시)
+   */
+  private showOrderBubble(x: number, y: number, order: CustomerOrder) {
+    // 기존 말풍선 제거
+    this.clearOrderBubble();
+
+    const width = 180;
+    const height = 80;
+
+    const bubble = this.add.graphics();
+    bubble.setDepth(20);
+
+    // 본체 + 꼬리
+    bubble.fillStyle(0xfff3d1, 0.95);
+    bubble.lineStyle(3, 0x996633);
+    bubble.fillRoundedRect(x, y, width, height, 16);
+    bubble.strokeRoundedRect(x, y, width, height, 16);
+    bubble.beginPath();
+    bubble.moveTo(x + 80, y + height);
+    bubble.lineTo(x + 95, y + height + 15);
+    bubble.lineTo(x + 90, y + height);
+    bubble.closePath();
+    bubble.fillPath();
+    bubble.strokePath();
+
+    // 주문 내용
+    let orderLines: string[] = [];
+    const totalOrdered = order.totalQuantity;
+
+    orderLines.push(`타코야끼 ${totalOrdered}개 주세요`);
+
+    const orderText = this.add
+      .text(x + width / 2, y + 40, orderLines.join('\n'), {
+        fontSize: '16px',
+        color: '#cc2200',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setDepth(21);
+
+    // 현재 말풍선 저장
+    this.currentOrderBubble = { graphics: bubble, text: orderText };
+
+    // 2초 후 제거
+    this.time.delayedCall(2000, () => {
+      this.clearOrderBubble();
+    });
+  }
+
+  /**
+   * 생산 패널을 표시합니다. (계속 유지, 업데이트 가능)
+   */
+  private showProductionPanel(x: number, y: number, order: CustomerOrder) {
+    // 기존 패널 제거
+    this.clearProductionPanel();
+
+    const width = 140;
+    const height = 120;
+
+    const panel = this.add.graphics();
+    panel.fillStyle(0x2b2b2b, 0.8);
+    panel.fillRoundedRect(x, y, width, height, 10);
+    panel.lineStyle(2, 0xf5deb3);
+    panel.strokeRoundedRect(x, y, width, height, 10);
+    panel.setDepth(10);
+
+    // 주문 내용 (남은 수량 표시)
+    let orderLines: string[] = [];
+
+    orderLines.push('남은 주문');
+    if (order.remainingToppingBreakdown.negi > 0)
+      orderLines.push(`파 : ${order.remainingToppingBreakdown.negi}개`);
+    if (order.remainingToppingBreakdown.katsuobushi > 0)
+      orderLines.push(`가츠오 : ${order.remainingToppingBreakdown.katsuobushi}개`);
+    if (order.remainingToppingBreakdown.nori > 0)
+      orderLines.push(`김 : ${order.remainingToppingBreakdown.nori}개`);
+    if (order.remainingToppingBreakdown.none > 0)
+      orderLines.push(`토핑없이 : ${order.remainingToppingBreakdown.none}개`);
+
+    const orderText = this.add
+      .text(x + 15, y + 15, orderLines.join('\n'), {
+        fontSize: '14px',
+        color: '#fff8e1',
+        lineSpacing: 4,
+      })
+      .setDepth(11);
+
+    // 현재 패널 저장
+    this.currentProductionPanel = { panel, text: orderText };
+  }
+
+  /**
+   * 생산 패널의 내용만 업데이트합니다.
+   */
+  private updateProductionPanel(order: CustomerOrder) {
+    if (!this.currentProductionPanel) {
+      // 패널이 없으면 새로 생성
+      this.showProductionPanel(570, 390, order);
+      return;
+    }
+
+    // 기존 텍스트만 업데이트
+    let orderLines: string[] = [];
+
+    orderLines.push('남은 주문:');
+    if (order.remainingToppingBreakdown.negi > 0)
+      orderLines.push(`파 : ${order.remainingToppingBreakdown.negi}개`);
+    if (order.remainingToppingBreakdown.katsuobushi > 0)
+      orderLines.push(`가츠오 : ${order.remainingToppingBreakdown.katsuobushi}개`);
+    if (order.remainingToppingBreakdown.nori > 0)
+      orderLines.push(`김 : ${order.remainingToppingBreakdown.nori}개`);
+    if (order.remainingToppingBreakdown.none > 0)
+      orderLines.push(`토핑없이 : ${order.remainingToppingBreakdown.none}개`);
+
+    this.currentProductionPanel.text.setText(orderLines.join('\n'));
   }
 
   // =====================================
@@ -616,71 +793,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // =====================================
-  // 손님 관련 (업데이트된 주문 표시)
-  // =====================================
-
-  private updateCustomerDisplay() {
-    if (!this.customerContainer) return;
-
-    this.customerContainer.removeAll(true);
-
-    if (!currentCustomer.customer) {
-      const waitingText = this.add
-        .text(0, 0, '대기 중...', { fontSize: '14px', color: '#888' })
-        .setOrigin(0.5);
-      this.customerContainer.add(waitingText);
-      return;
-    }
-
-    const customer = currentCustomer.customer;
-    const order = customer.order;
-
-    // 손님 아바타
-    const customerAvatar = this.add.text(0, -30, '🧑‍🍳', { fontSize: '24px' }).setOrigin(0.5);
-
-    // 말풍선
-    const bubbleWidth = 200;
-    const bubbleHeight = 120; // 더 높게 조정
-    const speechBubble = this.add.graphics();
-    speechBubble.fillStyle(0xffffff, 0.9);
-    speechBubble.fillRoundedRect(-bubbleWidth / 2, 0, bubbleWidth, bubbleHeight, 10);
-    speechBubble.strokeRoundedRect(-bubbleWidth / 2, 0, bubbleWidth, bubbleHeight, 10);
-    speechBubble.fillTriangle(-10, bubbleHeight, 0, bubbleHeight + 10, 10, bubbleHeight);
-    speechBubble.strokeTriangle(-10, bubbleHeight, 0, bubbleHeight + 10, 10, bubbleHeight);
-
-    // 주문 내용 (남은 수량 표시)
-    let orderLines: string[] = [];
-
-    // 진행 상황 표시
-    const totalOrdered = order.totalQuantity;
-    const remaining = order.remainingQuantity;
-    const completed = totalOrdered - remaining;
-
-    orderLines.push(`총 ${totalOrdered}개 (${completed}/${totalOrdered})`);
-    orderLines.push('소스 필수');
-
-    if (order.remainingToppingBreakdown.negi > 0)
-      orderLines.push(`파 ${order.remainingToppingBreakdown.negi}개`);
-    if (order.remainingToppingBreakdown.katsuobushi > 0)
-      orderLines.push(`가츠오 ${order.remainingToppingBreakdown.katsuobushi}개`);
-    if (order.remainingToppingBreakdown.nori > 0)
-      orderLines.push(`김 ${order.remainingToppingBreakdown.nori}개`);
-    if (order.remainingToppingBreakdown.none > 0)
-      orderLines.push(`토핑없이 ${order.remainingToppingBreakdown.none}개`);
-
-    const orderText = this.add
-      .text(0, 15, orderLines.join('\n'), {
-        fontSize: '10px', // 더 작게 조정
-        color: '#000',
-        align: 'center',
-        lineSpacing: 1,
-      })
-      .setOrigin(0.5, 0);
-
-    this.customerContainer.add([customerAvatar, speechBubble, orderText]);
-  }
-
   // ========================================
   // UI 업데이트 함수들
   // ========================================
@@ -696,7 +808,7 @@ export class GameScene extends Phaser.Scene {
     const maxTime = 180;
     const ratio = Phaser.Math.Clamp(totalSeconds / maxTime, 0, 1);
 
-    // TODO: 진행바 그리기 (오른쪽 노랑 → 왼쪽 빨강 그라데이션)
+    // 진행바 그리기 (오른쪽 노랑 → 왼쪽 빨강 그라데이션)
     this.progressBarFill.clear();
     this.progressBarFill.fillGradientStyle(
       0xffd700, // gold (right)
@@ -772,15 +884,18 @@ export class GameScene extends Phaser.Scene {
       this.updateScoreDisplay();
 
       if (result.orderCompleted) {
-        // 주문 완료 시 새 손님 등장
+        // 주문 완료 시 모든 UI 정리 후 새 손님 등장
+        this.clearAllCustomerUI();
         this.time.delayedCall(2000, () => {
           if (gameFlow.isGameActive) {
             this.spawnCustomerWithAnimation();
           }
         });
       } else {
-        // 부분 서빙 시 손님 정보만 업데이트
-        this.updateCustomerDisplay();
+        // 부분 서빙 시 생산 패널만 업데이트
+        if (currentCustomer.customer) {
+          this.updateProductionPanel(currentCustomer.customer.order);
+        }
       }
     } else {
       console.log(result.message);
@@ -907,13 +1022,15 @@ export class GameScene extends Phaser.Scene {
         gameStats.angryCustomers++;
         currentCustomer.customer = null;
 
+        // 모든 UI 정리
+        this.clearAllCustomerUI();
+
         if (gameFlow.isGameActive) {
           this.time.delayedCall(1000, () => {
             this.spawnCustomerWithAnimation();
           });
         }
 
-        this.updateCustomerDisplay();
         this.updateScoreDisplay();
       }
     }
