@@ -8,7 +8,7 @@ import { currentSelectedTool, type Tool } from '../state/gameState';
 export class ButtonPanel {
   private scene: Phaser.Scene;
   private toolButtonElements: Phaser.GameObjects.Image[] = [];
-  private toolButtonTexts: Phaser.GameObjects.Text[] = [];
+  private toolButtonImages: Phaser.GameObjects.Image[] = [];
   private onServeCallback: (() => void) | null = null;
 
   /**
@@ -27,11 +27,11 @@ export class ButtonPanel {
    * 두 번째 줄: 토핑들
    */
   private createAllToolButtons(startX: number, startY: number) {
-    const mainToolsData: { tool: Tool; label: string; color: number }[] = [
-      { tool: 'batter', label: '반죽', color: 0xffd700 },
-      { tool: 'octopus', label: '문어', color: 0xff8c00 },
-      { tool: 'stick', label: '꼬챙이', color: 0x8b4513 },
-      { tool: 'sauce', label: '소스', color: 0xdc143c },
+    const mainToolsData: { tool: Tool; label: string; image: string }[] = [
+      { tool: 'batter', label: '반죽', image: 'tool-kattle' },
+      { tool: 'octopus', label: '문어', image: 'tool-octopus' },
+      { tool: 'stick', label: '꼬챙이', image: 'tool-stick' },
+      { tool: 'sauce', label: '소스', image: 'tool-sauce' },
     ];
 
     // 메인 도구들 생성 (첫 번째 줄)
@@ -43,16 +43,14 @@ export class ButtonPanel {
         .setInteractive()
         .setDepth(6);
 
-      const toolButtonText = this.scene.add
-        .text(startX + buttonIndex * 80, startY, toolData.label, {
-          fontSize: '14px',
-          color: '#000',
-        })
+      const toolButtonImage = this.scene.add
+        .image(startX + buttonIndex * 80, startY, toolData.image)
+        .setScale(0.05)
         .setOrigin(0.5)
         .setDepth(6);
 
       this.toolButtonElements.push(toolButton);
-      this.toolButtonTexts.push(toolButtonText);
+      this.toolButtonImages.push(toolButtonImage);
 
       toolButton.on('pointerdown', () => {
         currentSelectedTool.current = toolData.tool;
@@ -68,10 +66,8 @@ export class ButtonPanel {
       .setDepth(6);
 
     this.scene.add
-      .text(startX + 7 * 80, startY, '서빙', {
-        fontSize: '14px',
-        color: '#000',
-      })
+      .image(startX + 7 * 80, startY, 'tool-serve')
+      .setScale(0.05)
       .setOrigin(0.5)
       .setDepth(6);
 
@@ -83,10 +79,10 @@ export class ButtonPanel {
     });
 
     // 토핑들 생성 (두 번째 줄)
-    const toppingsData: { tool: Tool; label: string; color: number }[] = [
-      { tool: 'negi', label: '파', color: 0xfffacd },
-      { tool: 'katsuobushi', label: '가츠오', color: 0xdeb887 },
-      { tool: 'nori', label: '김', color: 0x2f4f2f },
+    const toppingsData: { tool: Tool; label: string; image: string }[] = [
+      { tool: 'negi', label: '파', image: 'topping-negi' },
+      { tool: 'katsuobushi', label: '가츠오', image: 'topping-katsuo' },
+      { tool: 'nori', label: '김', image: 'topping-nori' },
     ];
 
     toppingsData.forEach((toppingData, toppingIndex) => {
@@ -96,16 +92,14 @@ export class ButtonPanel {
         .setInteractive()
         .setDepth(6);
 
-      const toppingButtonText = this.scene.add
-        .text(startX + (4 + toppingIndex) * 80, startY, toppingData.label, {
-          fontSize: '12px',
-          color: '#000',
-        })
+      const toppingButtonImage = this.scene.add
+        .image(startX + (4 + toppingIndex) * 80, startY, toppingData.image)
+        .setScale(0.05)
         .setOrigin(0.5)
         .setDepth(6);
 
       this.toolButtonElements.push(toppingButton);
-      this.toolButtonTexts.push(toppingButtonText);
+      this.toolButtonImages.push(toppingButtonImage);
 
       toppingButton.on('pointerdown', () => {
         currentSelectedTool.current = toppingData.tool;

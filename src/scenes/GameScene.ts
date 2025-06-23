@@ -93,6 +93,16 @@ export class GameScene extends Phaser.Scene {
     this.load.image('tako-perfect-sauce-katsuobushi', 'assets/tako-perfect-sauce-katsuobushi.png');
     this.load.image('tako-perfect-sauce-nori', 'assets/tako-perfect-sauce-nori.png');
 
+    // 툴 버튼 이미지
+    this.load.image('tool-kattle', 'assets/tool-kattle.png');
+    this.load.image('tool-octopus', 'assets/tool-octopus.png');
+    this.load.image('tool-stick', 'assets/tool-stick.png');
+    this.load.image('tool-sauce', 'assets/tool-sauce.png');
+    this.load.image('topping-negi', 'assets/topping-negi.png');
+    this.load.image('topping-katsuo', 'assets/topping-katsuo.png');
+    this.load.image('topping-nori', 'assets/topping-nori.png');
+    this.load.image('tool-serve', 'assets/tool-serve.png');
+
     // ========================================
     // 손님 에셋
     // ========================================
