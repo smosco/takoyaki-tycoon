@@ -25,8 +25,13 @@ export class CustomerManager {
     text: Phaser.GameObjects.Text;
   } | null = null;
 
-  // 현재 손님의 기분 상태
+  // 현재 손님의 기분 상태 (캐시)
   private currentMood: 'happy' | 'neutral' | 'angry' = 'happy';
+  private lastPatienceCheck: number = 100; // 마지막으로 체크한 인내심 값
+
+  // 타이머 참조들 (정리용)
+  private patienceUpdateTimer: Phaser.Time.TimerEvent | null = null;
+  private moodUpdateTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor(scene: Phaser.Scene, platesManager: PlatesManager) {
     this.scene = scene;
@@ -57,8 +62,9 @@ export class CustomerManager {
       .setScale(0.6)
       .setDepth(1);
 
-    // 새 손님이므로 기분 초기화
+    // 새 손님이므로 기분 및 인내심 초기화
     this.currentMood = 'happy';
+    this.lastPatienceCheck = 100;
     console.log('새 손님 등장! 초기 기분: happy');
 
     this.scene.tweens.add({
@@ -187,62 +193,56 @@ export class CustomerManager {
     this.currentProductionPanel.text.setText(this.formatOrderText(order));
   }
 
-  // 실시간 기분 업데이트 (인내심 기반)
+  // 최적화된 기분 업데이트 (인내심이 변경된 경우에만 실행)
   private updateMoodByPatience() {
-    console.log('updateMoodByPatience 호출됨');
-
-    if (!currentCustomer.customer) {
-      console.log('손님이 없어서 기분 업데이트 안됨');
+    if (!currentCustomer.customer || !this.customerSprite) {
       return;
     }
 
-    if (!this.customerSprite) {
-      console.log('손님 스프라이트가 없어서 기분 업데이트 안됨');
+    const currentPatience = currentCustomer.customer.patience;
+
+    // 인내심이 변경되지 않았으면 스킵
+    if (currentPatience === this.lastPatienceCheck) {
       return;
     }
 
-    const patience = currentCustomer.customer.patience;
-    console.log(`현재 인내심: ${patience}%`);
+    this.lastPatienceCheck = currentPatience;
 
-    const moodData = getCustomerMoodByPatience(patience);
+    const moodData = getCustomerMoodByPatience(currentPatience);
     const newMood = moodData.mood;
-    console.log(`계산된 새 기분: ${newMood} (이전: ${this.currentMood})`);
 
-    // 항상 기분을 적용
-    console.log(`기분 적용: ${newMood}`);
-    this.currentMood = newMood;
-    this.applyMoodTint(newMood);
-
-    // 기분이 바뀐 경우에만 로그 (기존 로직)
-    // if (this.currentMood !== newMood) {
-    //   console.log(`손님 기분 변화: ${this.currentMood} → ${newMood} (인내심: ${patience}%)`);
-    //   this.currentMood = newMood;
-    //   this.applyMoodTint(newMood);
-    // }
+    // 기분이 실제로 변경된 경우에만 적용
+    if (this.currentMood !== newMood) {
+      console.log(`손님 기분 변화: ${this.currentMood} → ${newMood} (인내심: ${currentPatience}%)`);
+      this.applyMoodTint(newMood);
+      this.currentMood = newMood; // 기분 적용 후에 상태 업데이트
+    }
   }
 
-  // 기분에 따른 Tint 적용
+  // 기분 적용 (currentMood 업데이트는 호출하는 쪽에서 처리)
   private applyMoodTint(mood: 'happy' | 'neutral' | 'angry') {
-    console.log(`applyMoodTint 호출: ${mood}`); // 디버깅
-
     if (!this.customerSprite) {
       console.log('스프라이트가 없어서 Tint 적용 안됨');
       return;
     }
 
+    console.log(`${mood} 기분 적용 중...`);
+
     switch (mood) {
       case 'happy':
-        console.log('Happy 틴트 적용 (기본색)');
+        console.log('Happy 상태로 변경 - 기본 텍스처, 틴트 제거');
+        this.customerSprite.setTexture('customer_happy');
+        this.customerSprite.clearTint();
         break;
       case 'neutral':
-        console.log('Neutral 틴트 적용 (노란색)');
+        console.log('Neutral 상태로 변경 - neutral 텍스처, 노란 틴트');
         this.customerSprite.setTexture('customer_neutral');
-        this.customerSprite.setTint(0xffffaa); // 연한 노랑 (약간 지침)
+        this.customerSprite.setTint(0xffffaa);
         break;
       case 'angry':
-        console.log('Angry 틴트 적용 (빨간색)');
+        console.log('Angry 상태로 변경 - angry 텍스처, 빨간 틴트');
         this.customerSprite.setTexture('customer_angry');
-        this.customerSprite.setTint(0xffaaaa); // 연한 빨간색 (화남)
+        this.customerSprite.setTint(0xffaaaa);
         break;
     }
   }
@@ -250,15 +250,6 @@ export class CustomerManager {
   // 현재 기분 반환 (서빙 완료 시 보너스 계산용)
   getCurrentMood(): 'happy' | 'neutral' | 'angry' {
     return this.currentMood;
-  }
-
-  // 테스트용 강제 기분 변경 함수
-  public testMoodChange() {
-    console.log('테스트: 강제로 기분 변경');
-    const moods: ('happy' | 'neutral' | 'angry')[] = ['happy', 'neutral', 'angry'];
-    const randomMood = moods[Math.floor(Math.random() * moods.length)];
-    console.log(`테스트 기분: ${randomMood}`);
-    this.applyMoodTint(randomMood);
   }
 
   clearOrderBubble() {
@@ -282,54 +273,71 @@ export class CustomerManager {
     this.clearProductionPanel();
   }
 
+  // 타이머 정리 메서드 추가
+  private cleanupTimers() {
+    if (this.patienceUpdateTimer) {
+      this.patienceUpdateTimer.destroy();
+      this.patienceUpdateTimer = null;
+    }
+    if (this.moodUpdateTimer) {
+      this.moodUpdateTimer.destroy();
+      this.moodUpdateTimer = null;
+    }
+  }
+
   startCustomerSystem() {
-    console.log('CustomerSystem 시작'); // 디버깅
+    console.log('CustomerSystem 시작');
+
+    // 기존 타이머들 정리
+    this.cleanupTimers();
+
     this.spawnNewCustomer();
 
-    // 인내심 업데이트 (기존 1초마다)
-    this.scene.time.addEvent({
+    // 인내심 업데이트 (1초마다)
+    this.patienceUpdateTimer = this.scene.time.addEvent({
       delay: 1000,
       callback: this.updatePatience,
       callbackScope: this,
       loop: true,
     });
 
-    // 기분 업데이트
-    console.log('기분 업데이트 타이머 시작 (5초마다)');
-    this.scene.time.addEvent({
-      delay: 5000, // 5초
+    // 기분 업데이트 (2초마다로 줄임 - 더 반응성 있게)
+    this.moodUpdateTimer = this.scene.time.addEvent({
+      delay: 2000,
       callback: this.updateMoodByPatience,
       callbackScope: this,
       loop: true,
     });
-
-    // 10초 후 강제 기분 변경
-    this.scene.time.delayedCall(10000, () => {
-      console.log('10초 후 테스트 실행');
-      this.testMoodChange();
-    });
   }
 
   private updatePatience() {
-    if (!gameFlow.isGameActive) return;
+    if (!gameFlow.isGameActive || !currentCustomer.customer) return;
 
-    if (currentCustomer.customer) {
-      currentCustomer.customer.patience -= 1;
-      console.log(`인내심 감소: ${currentCustomer.customer.patience}%`);
+    currentCustomer.customer.patience -= 1;
+    console.log(`인내심 감소: ${currentCustomer.customer.patience}%`);
 
-      if (currentCustomer.customer.patience <= 0) {
-        console.log('손님이 화나서 떠났습니다!');
-        gameStats.angryCustomers++;
-        currentCustomer.customer = null;
+    if (currentCustomer.customer.patience <= 0) {
+      console.log('손님이 화나서 떠났습니다!');
+      gameStats.angryCustomers++;
+      currentCustomer.customer = null;
 
-        this.clearAllUI();
+      this.clearAllUI();
 
-        if (gameFlow.isGameActive) {
-          this.scene.time.delayedCall(1000, () => {
-            this.spawnNewCustomer();
-          });
-        }
+      if (gameFlow.isGameActive) {
+        this.scene.time.delayedCall(1000, () => {
+          this.spawnNewCustomer();
+        });
       }
+    }
+  }
+
+  // 메모리 누수 방지를 위한 destroy 메서드
+  destroy() {
+    this.cleanupTimers();
+    this.clearAllUI();
+    if (this.customerSprite) {
+      this.customerSprite.destroy();
+      this.customerSprite = null;
     }
   }
 }
