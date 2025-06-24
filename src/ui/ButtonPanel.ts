@@ -74,6 +74,7 @@ export class ButtonPanel {
     serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
         this.onServeCallback();
+        this.scene.sound.play('serve-sound');
       }
       console.log('서빙 버튼 클릭!');
     });

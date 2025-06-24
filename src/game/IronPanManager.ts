@@ -77,6 +77,8 @@ export class IronPanManager {
 
   private addBatter(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
     if (!cellState.hasBatter) {
+      this.scene.sound.play('batter-sound');
+
       cellState.hasBatter = true;
       cellState.cookingStartTime = currentTime;
       cellState.cookingLevel = 'raw';
@@ -87,6 +89,8 @@ export class IronPanManager {
 
   private addOctopus(cellState: IronPanCellState, row: number, col: number) {
     if (cellState.hasBatter && !cellState.hasOctopus) {
+      this.scene.sound.play('octopus-sound');
+
       cellState.hasOctopus = true;
       this.updateCellVisual(row, col);
       console.log(`[${row},${col}] 문어 추가`);
@@ -95,6 +99,7 @@ export class IronPanManager {
 
   private handleStick(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
     if (!cellState.hasBatter) return;
+    this.scene.sound.play('stick-sound');
 
     const currentCookingLevel = calculateCurrentCookingLevel(cellState, currentTime);
 

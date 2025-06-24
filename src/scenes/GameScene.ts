@@ -55,8 +55,9 @@ export class GameScene extends Phaser.Scene {
       blendMode: 'NORMAL',
     });
 
-    // TODO: 사운드 끄기 버튼 추가
+    // TODO: 사운드 끄기 버튼 추가(백그라운드 소리 너무 큼)
     this.sound.play('japan-background');
+    this.sound.setVolume(0.2);
   }
 
   private initializeManagers() {

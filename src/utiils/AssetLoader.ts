@@ -114,5 +114,11 @@ export class AssetLoader {
 
   private static loadAudioAssets(scene: Phaser.Scene) {
     scene.load.audio('japan-background', 'assets/audio/japan-background.mp3');
+    scene.load.audio('batter-sound', 'assets/audio/batter-sound.mp3');
+    scene.load.audio('octopus-sound', 'assets/audio/octopus-sound.mp3');
+    scene.load.audio('sauce-sound', 'assets/audio/sauce-sound.mp3');
+    scene.load.audio('topping-sound', 'assets/audio/topping-sound.mp3');
+    scene.load.audio('serve-sound', 'assets/audio/serve-sound.mp3');
+    scene.load.audio('stick-sound', 'assets/audio/stick-sound.mp3');
   }
 }
