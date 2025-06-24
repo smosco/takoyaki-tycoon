@@ -262,7 +262,7 @@ export class IronPanManager {
       const layers = this.cellLayers[row][col];
 
       // 뒤집기 애니메이션 (content 레이어만 사용)
-      this.animateFlip(layers.content, undefined, () => {
+      this.animateFlip(layers.content, () => {
         // 애니메이션 완료 후 텍스처 업데이트
         this.updateContentTexture(row, col);
         console.log(`[${row},${col}] 뒤집기 완료`);
@@ -272,7 +272,6 @@ export class IronPanManager {
 
   private animateFlip(
     contentLayer: Phaser.GameObjects.Image,
-    octopusLayer?: Phaser.GameObjects.Image,
     onComplete?: () => void
   ) {
     // 문어 레이어는 더 이상 사용하지 않으므로 contentLayer만 뒤집기
