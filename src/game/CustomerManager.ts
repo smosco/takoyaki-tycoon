@@ -40,7 +40,7 @@ export class CustomerManager {
 
   private createTemporaryCustomer() {
     this.customerSprite = this.scene.add
-      .sprite(600, 300, 'customer_temp')
+      .sprite(600, 300, 'customer_happy')
       .setScale(0.6)
       .setDepth(1);
   }
@@ -53,7 +53,7 @@ export class CustomerManager {
     }
 
     this.customerSprite = this.scene.add
-      .sprite(900, 360, 'customer_temp')
+      .sprite(900, 360, 'customer_happy')
       .setScale(0.6)
       .setDepth(1);
 
@@ -236,10 +236,12 @@ export class CustomerManager {
         break;
       case 'neutral':
         console.log('Neutral 틴트 적용 (노란색)');
+        this.customerSprite.setTexture('customer_neutral');
         this.customerSprite.setTint(0xffffaa); // 연한 노랑 (약간 지침)
         break;
       case 'angry':
         console.log('Angry 틴트 적용 (빨간색)');
+        this.customerSprite.setTexture('customer_angry');
         this.customerSprite.setTint(0xffaaaa); // 연한 빨간색 (화남)
         break;
     }

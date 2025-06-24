@@ -76,7 +76,9 @@ export class AssetLoader {
 
   private static loadCustomerAssets(scene: Phaser.Scene) {
     // 임시 이미지
-    scene.load.image('customer_temp', 'assets/cat.png');
+    scene.load.image('customer_neutral', 'assets/customer-neutral.png');
+    scene.load.image('customer_happy', 'assets/customer-happy.png');
+    scene.load.image('customer_angry', 'assets/customer-angry.png');
 
     // 실제 에셋 (준비되면 주석 해제)
     /*
