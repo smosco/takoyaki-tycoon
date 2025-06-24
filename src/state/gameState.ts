@@ -232,11 +232,11 @@ export function getCustomerMoodByPatience(patience: number): {
   message: string;
 } {
   if (patience >= 60) {
-    return { mood: 'happy', message: '😊 여유로워요!' };
+    return { mood: 'happy', message: '완전 맛있겠다냐옹~' };
   } else if (patience >= 30) {
-    return { mood: 'neutral', message: '😐 괜찮아요' };
+    return { mood: 'neutral', message: '언제 나오냐옹~' };
   } else {
-    return { mood: 'angry', message: '😰 빨리 해주세요!' };
+    return { mood: 'angry', message: '캬악! 왜 안 주냐옹!' };
   }
 }
 

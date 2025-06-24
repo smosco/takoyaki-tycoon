@@ -25,6 +25,12 @@ export class CustomerManager {
     text: Phaser.GameObjects.Text;
   } | null = null;
 
+  // 기분 말풍선 추가
+  private currentMoodBubble: {
+    graphics: Phaser.GameObjects.Graphics;
+    text: Phaser.GameObjects.Text;
+  } | null = null;
+
   // 현재 손님의 기분 상태 (캐시)
   private currentMood: 'happy' | 'neutral' | 'angry' = 'happy';
   private lastPatienceCheck: number = 100; // 마지막으로 체크한 인내심 값
@@ -215,7 +221,103 @@ export class CustomerManager {
     if (this.currentMood !== newMood) {
       console.log(`손님 기분 변화: ${this.currentMood} → ${newMood} (인내심: ${currentPatience}%)`);
       this.applyMoodTint(newMood);
+      this.showMoodBubble(newMood, moodData.message); // 기분 말풍선 표시
       this.currentMood = newMood; // 기분 적용 후에 상태 업데이트
+    }
+  }
+
+  // 기분 말풍선 표시
+  private showMoodBubble(mood: 'happy' | 'neutral' | 'angry', message: string) {
+    if (!this.customerSprite) return;
+
+    this.clearMoodBubble();
+
+    const x = this.customerSprite.x - 50;
+    const y = this.customerSprite.y - 250;
+    const width = 160;
+    const height = 60;
+
+    // 기분에 따른 말풍선 색상 설정
+    let bubbleColor: number;
+    let borderColor: number;
+    let textColor: string;
+
+    switch (mood) {
+      case 'happy':
+        bubbleColor = 0xe8f5e8; // 연한 초록
+        borderColor = 0x4caf50; // 초록
+        textColor = '#2e7d32';
+        break;
+      case 'neutral':
+        bubbleColor = 0xfff8e1; // 연한 노랑
+        borderColor = 0xffc107; // 노랑
+        textColor = '#f57f17';
+        break;
+      case 'angry':
+        bubbleColor = 0xffebee; // 연한 빨강
+        borderColor = 0xf44336; // 빨강
+        textColor = '#c62828';
+        break;
+    }
+
+    const bubble = this.scene.add.graphics();
+    bubble.setDepth(25); // 다른 UI보다 위에 표시
+
+    // 말풍선 배경
+    bubble.fillStyle(bubbleColor, 0.95);
+    bubble.lineStyle(2, borderColor);
+    bubble.fillRoundedRect(x, y, width, height, 12);
+    bubble.strokeRoundedRect(x, y, width, height, 12);
+
+    // 생각 풍선 동그라미들 (손님 쪽으로)
+    const circleX = x + width / 2;
+    const circleStartY = y + height;
+
+    // 큰 동그라미
+    bubble.fillCircle(circleX - 2, circleStartY + 12, 6);
+    bubble.strokeCircle(circleX - 2, circleStartY + 12, 6);
+
+    // 중간 동그라미
+    bubble.fillCircle(circleX - 12, circleStartY + 22, 4);
+    bubble.strokeCircle(circleX - 12, circleStartY + 22, 4);
+
+    // 텍스트
+    const bubbleText = this.scene.add
+      .text(x + width / 2, y + height / 2, message, {
+        fontSize: '14px',
+        color: textColor,
+        fontStyle: 'bold',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setDepth(26);
+
+    this.currentMoodBubble = { graphics: bubble, text: bubbleText };
+
+    // 2.5초 후 자동으로 사라짐
+    this.scene.time.delayedCall(2500, () => {
+      this.clearMoodBubble();
+    });
+
+    // 말풍선 등장 애니메이션
+    bubble.setScale(0);
+    bubbleText.setScale(0);
+
+    this.scene.tweens.add({
+      targets: [bubble, bubbleText],
+      scaleX: 1,
+      scaleY: 1,
+      duration: 300,
+      ease: 'Back.easeOut',
+    });
+  }
+
+  // 기분 말풍선 제거
+  private clearMoodBubble() {
+    if (this.currentMoodBubble) {
+      this.currentMoodBubble.graphics.destroy();
+      this.currentMoodBubble.text.destroy();
+      this.currentMoodBubble = null;
     }
   }
 
@@ -271,6 +373,7 @@ export class CustomerManager {
   clearAllUI() {
     this.clearOrderBubble();
     this.clearProductionPanel();
+    this.clearMoodBubble(); // 기분 말풍선도 함께 정리
   }
 
   // 타이머 정리 메서드 추가
