@@ -72,6 +72,7 @@ export const currentSelectedTool = { current: 'batter' as Tool };
 
 // 손님 시스템 상태
 export const currentCustomer: { customer: Customer | null } = { customer: null };
+export const gameLevel = { value: 1 }; // gameLevel 추가
 export const gameScore = { value: 0 };
 export const gameStats = {
   servedCustomers: 0,
@@ -157,6 +158,9 @@ export function isTopping(tool: Tool): tool is Topping {
 // 손님 시스템 함수들
 // =====================================
 
+// 기분 상태 캐시 (성능 최적화)
+const moodCache = new Map<number, { mood: CustomerMood; message: string }>();
+
 /**
  * 랜덤한 손님 주문을 생성합니다.
  * 총 개수를 정하고 토핑별로 개수를 랜덤하게 분배합니다.
@@ -223,6 +227,7 @@ export function createNewCustomer(): Customer {
 /**
  * 인내심 기반으로 손님의 기분을 결정합니다.
  * 정확도는 고려하지 않고 오직 시간(인내심)만 기반으로 합니다.
+ * 캐시를 사용하여 성능을 최적화합니다.
  *
  * @param patience - 현재 손님의 인내심 (0-100)
  * @returns 손님의 기분과 메시지
@@ -231,13 +236,27 @@ export function getCustomerMoodByPatience(patience: number): {
   mood: CustomerMood;
   message: string;
 } {
-  if (patience >= 60) {
-    return { mood: 'happy', message: '완전 맛있겠다냐옹~' };
-  } else if (patience >= 30) {
-    return { mood: 'neutral', message: '언제 나오냐옹~' };
-  } else {
-    return { mood: 'angry', message: '캬악! 왜 안 주냐옹!' };
+  // 캐시에서 확인
+  if (moodCache.has(patience)) {
+    return moodCache.get(patience)!;
   }
+
+  let result: { mood: CustomerMood; message: string };
+
+  if (patience >= 60) {
+    result = { mood: 'happy', message: '히히 완전 맛나겠다옹~' };
+  } else if (patience >= 30) {
+    result = { mood: 'neutral', message: '언제 나오냐옹ㅜ' };
+  } else {
+    result = { mood: 'angry', message: '캬악! 빨리 주라옹!' };
+  }
+
+  // 캐시에 저장 (최대 100개까지만)
+  if (moodCache.size < 100) {
+    moodCache.set(patience, result);
+  }
+
+  return result;
 }
 
 /**
@@ -272,8 +291,6 @@ export function compareOrderWithServedTakoyaki(
     cookingIssues: number;
   };
 } {
-  console.log('주문과 서빙 비교:', order, servedTakoyaki);
-
   const breakdown = {
     negi: { requested: order.remainingToppingBreakdown.negi, correct: 0 },
     katsuobushi: { requested: order.remainingToppingBreakdown.katsuobushi, correct: 0 },
@@ -283,12 +300,10 @@ export function compareOrderWithServedTakoyaki(
     cookingIssues: 0,
   };
 
-  // 모든 서빙된 타코야끼를 처리 (기존 로직 유지)
   const servedCount = servedTakoyaki.length;
 
-  for (let i = 0; i < servedCount; i++) {
-    const takoyaki = servedTakoyaki[i];
-
+  // 서빙된 타코야끼 검증 및 카운팅
+  for (const takoyaki of servedTakoyaki) {
     // 소스 체크 (무조건 있어야 함)
     if (!takoyaki.sauce) {
       breakdown.sauceIssues++;
@@ -318,7 +333,7 @@ export function compareOrderWithServedTakoyaki(
     }
   }
 
-  // 올바른 타코야끼 개수 계산 (기존 로직 유지)
+  // 올바른 타코야끼 개수 계산
   const correctCount =
     breakdown.negi.correct +
     breakdown.katsuobushi.correct +
@@ -339,12 +354,6 @@ export function compareOrderWithServedTakoyaki(
   // 기분은 인내심으로 결정 (표시용)
   const moodData = getCustomerMoodByPatience(currentPatience);
   const mood = moodData.mood;
-
-  console.log(
-    `서빙 결과: ${servedCount}개 서빙, ${correctCount}개 정확, 기본점수: ${baseScore}, 보너스: ${bonusScore}, 총점: ${totalScore} (기분: ${
-      finalMood || mood
-    })`
-  );
 
   return {
     correctCount,
@@ -375,7 +384,9 @@ export function calculateCompletionBonus(mood: CustomerMood, totalCount: number)
   }
 }
 
-/* 기분은 인내심 기반으로만 결정되며, 주문 완료 시 보너스가 적용됩니다.
+/**
+ * 손님에게 서빙합니다.
+ * 기분은 인내심 기반으로만 결정되며, 주문 완료 시 보너스가 적용됩니다.
  *
  * @param customerMood - 현재 손님의 기분 (CustomerManager에서 전달)
  * @returns 서빙 결과 (성공 여부, 점수, 메시지 포함)
@@ -401,13 +412,10 @@ export function serveToCustomer(customerMood?: 'happy' | 'neutral' | 'angry'): {
     return { success: false, message: '서빙할 타코야끼가 없습니다.', orderCompleted: false };
   }
 
-  console.log('서빙된 타코야끼:', platesWithTakoyaki);
-
   // 주문 완료 체크 (미리 확인)
   const order = currentCustomer.customer.order;
-  const willComplete =
-    order.remainingQuantity <=
-    platesWithTakoyaki.filter((t) => t.sauce && t.cookingLevel === 'perfect').length;
+  const validTakoyaki = platesWithTakoyaki.filter((t) => t.sauce && t.cookingLevel === 'perfect');
+  const willComplete = order.remainingQuantity <= validTakoyaki.length;
 
   // 주문과 비교 (완료 시에만 기분 전달)
   const result = compareOrderWithServedTakoyaki(
@@ -437,6 +445,10 @@ export function serveToCustomer(customerMood?: 'happy' | 'neutral' | 'angry'): {
   const orderCompleted = order.remainingQuantity <= 0;
 
   if (orderCompleted) {
+    // 레벨 업!
+    gameLevel.value += 1;
+    console.log(`레벨 업! 현재 레벨: ${gameLevel.value}`);
+
     // 주문 완료 시 통계 업데이트
     gameStats.servedCustomers++;
     if (result.mood === 'happy') gameStats.happyCustomers++;
@@ -454,7 +466,7 @@ export function serveToCustomer(customerMood?: 'happy' | 'neutral' | 'angry'): {
     return {
       success: true,
       result,
-      message: `주문 완료! ${result.correctCount}개 정확! +${result.score}점${bonusMessage}`,
+      message: `주문 완료! 레벨 ${gameLevel.value}! ${result.correctCount}개 정확! +${result.score}점${bonusMessage}`,
       orderCompleted: true,
     };
   } else {
@@ -500,6 +512,9 @@ export function startGame(): void {
   gameStats.servedCustomers = 0;
   gameStats.happyCustomers = 0;
   gameStats.angryCustomers = 0;
+
+  // 캐시 초기화
+  moodCache.clear();
 
   console.log('게임 시작! 3분 타이머 가동');
 }
@@ -572,6 +587,7 @@ export function resetGameState(): void {
   gameFlow.isGameEnded = false;
 
   // 점수 및 통계 초기화
+  gameLevel.value = 1; // 레벨 초기화 추가
   gameScore.value = 0;
   gameStats.servedCustomers = 0;
   gameStats.happyCustomers = 0;
@@ -583,17 +599,22 @@ export function resetGameState(): void {
   // 접시 초기화
   platesWithTakoyaki.length = 0;
 
+  // 캐시 초기화
+  moodCache.clear();
+
   // 철판 초기화
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
-      Object.assign(ironPanCells[row][col], {
-        hasBatter: false,
-        hasOctopus: false,
-        isFlipped: false,
-        cookingStartTime: null,
-        cookingLevel: 'raw',
-        isMovedToPlate: false,
-      });
+      if (ironPanCells[row] && ironPanCells[row][col]) {
+        Object.assign(ironPanCells[row][col], {
+          hasBatter: false,
+          hasOctopus: false,
+          isFlipped: false,
+          cookingStartTime: null,
+          cookingLevel: 'raw',
+          isMovedToPlate: false,
+        });
+      }
     }
   }
 

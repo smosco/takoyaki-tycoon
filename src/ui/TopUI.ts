@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import { gameScore, getFormattedTime } from '../state/gameState';
+import { gameLevel, gameScore, getFormattedTime } from '../state/gameState';
 
 export class TopUI {
   private scene: Phaser.Scene;
+  private levelText: Phaser.GameObjects.Text | null = null;
   private scoreText: Phaser.GameObjects.Text | null = null;
   private timerText: Phaser.GameObjects.Text | null = null;
   private progressBarFill: Phaser.GameObjects.Graphics | null = null;
@@ -46,7 +47,7 @@ export class TopUI {
       })
       .setDepth(12);
 
-    this.scene.add
+    this.levelText = this.scene.add
       .text(90, 23, '1', {
         fontSize: '24px',
         color: '#fff',
@@ -152,6 +153,12 @@ export class TopUI {
     } else if (totalSeconds > 15 && this.timerText.getData('pumping')) {
       this.timerText.setData('pumping', false);
       this.timerText.setScale(1);
+    }
+  }
+
+  updateLevel() {
+    if (this.levelText) {
+      this.levelText.setText(gameLevel.value.toString());
     }
   }
 
