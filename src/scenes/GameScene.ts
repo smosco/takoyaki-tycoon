@@ -54,6 +54,9 @@ export class GameScene extends Phaser.Scene {
       quantity: 1,
       blendMode: 'NORMAL',
     });
+
+    // TODO: 사운드 끄기 버튼 추가
+    this.sound.play('japan-background');
   }
 
   private initializeManagers() {

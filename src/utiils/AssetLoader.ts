@@ -16,6 +16,9 @@ export class AssetLoader {
 
     // 손님 에셋
     this.loadCustomerAssets(scene);
+
+    // 오디오
+    this.loadAudioAssets(scene);
   }
 
   private static loadBasicAssets(scene: Phaser.Scene) {
@@ -107,5 +110,9 @@ export class AssetLoader {
       frameHeight: 96
     });
     */
+  }
+
+  private static loadAudioAssets(scene: Phaser.Scene) {
+    scene.load.audio('japan-background', 'assets/audio/japan-background.mp3');
   }
 }
