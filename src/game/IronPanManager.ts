@@ -75,6 +75,7 @@ export class IronPanManager {
     }
   }
 
+  // TODO: 접시 텍스처 철판 고정, 위에 올린 것만 변경
   private addBatter(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
     if (!cellState.hasBatter) {
       this.scene.sound.play('batter-sound');
@@ -82,8 +83,47 @@ export class IronPanManager {
       cellState.hasBatter = true;
       cellState.cookingStartTime = currentTime;
       cellState.cookingLevel = 'raw';
-      this.updateCellVisual(row, col);
-      console.log(`[${row},${col}] 반죽 추가`);
+
+      // 셀의 비주얼 요소 가져오기
+      const cellVisualIndex = row * 3 + col;
+      const cellVisualElement = this.ironPanVisualCells[cellVisualIndex];
+
+      // 반죽 텍스처로 변경하고 초기 크기를 0으로 설정
+      const texture = TextureHelper.getCellTexture(cellState, cellState.cookingLevel);
+      cellVisualElement.setTexture(texture);
+      cellVisualElement.setScale(0); // 초기 크기 0
+
+      // 부어지는 애니메이션 효과
+      this.scene.tweens.add({
+        targets: cellVisualElement,
+        scaleX: 0.08, // 원래 크기로
+        scaleY: 0.08, // 원래 크기로
+        duration: 600, // 0.6초 동안
+        ease: 'Back.easeOut', // 부드러운 이징 효과 (살짝 튀는 느낌)
+        onComplete: () => {
+          console.log(`[${row},${col}] 반죽 추가 완료`);
+        },
+      });
+
+      // 추가 효과 1: 살짝 회전하면서 부어지는 느낌
+      this.scene.tweens.add({
+        targets: cellVisualElement,
+        rotation: Phaser.Math.DegToRad(5), // 5도 회전
+        duration: 300,
+        ease: 'Power2.easeOut',
+        yoyo: true, // 다시 원래대로
+        repeat: 1,
+      });
+
+      // 추가 효과 2: 위에서 아래로 떨어지는 느낌 (선택사항)
+      const originalY = cellVisualElement.y;
+      cellVisualElement.y = originalY - 20; // 살짝 위에서 시작
+      this.scene.tweens.add({
+        targets: cellVisualElement,
+        y: originalY,
+        duration: 400,
+        ease: 'Bounce.easeOut',
+      });
     }
   }
 
