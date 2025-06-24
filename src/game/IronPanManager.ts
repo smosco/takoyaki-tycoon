@@ -9,12 +9,18 @@ import {
 } from '../state/gameState';
 import { TextureHelper } from '../utiils/TextureHelper';
 
+// 각 셀의 레이어들을 관리하는 인터페이스
+interface CellLayers {
+  background: Phaser.GameObjects.Image; // 접시 (고정)
+  content: Phaser.GameObjects.Image; // 반죽/타코야키 (변경됨)
+  octopus?: Phaser.GameObjects.Image; // 문어 (선택적)
+  container: Phaser.GameObjects.Container; // 전체를 담는 컨테이너
+}
+
 export class IronPanManager {
   private scene: Phaser.Scene;
-  private ironPanVisualCells: Phaser.GameObjects.Image[] = [];
-
-  // PlatesManager 참조 추가
-  private platesManager: any; // TODO: PlatesManager 타입 추가
+  private cellLayers: CellLayers[][] = []; // 3x3 레이어 배열
+  private platesManager: any;
 
   private readonly ironPanStartX = 70;
   private readonly ironPanStartY = 270;
@@ -39,19 +45,44 @@ export class IronPanManager {
   }
 
   private createCells() {
+    // 3x3 레이어 배열 초기화
     for (let row = 0; row < 3; row++) {
+      this.cellLayers[row] = [];
       for (let col = 0; col < 3; col++) {
         const cellX = this.ironPanStartX + 10 + col * this.cellSize;
         const cellY = this.ironPanStartY + 10 + row * this.cellSize;
 
-        const cellVisualElement = this.scene.add
-          .image(cellX, cellY, 'plate-cell')
-          .setScale(0.08)
-          .setDepth(5)
-          .setInteractive();
+        // 컨테이너 생성 (모든 레이어를 담음)
+        const container = this.scene.add.container(cellX, cellY);
+        container.setDepth(5);
+        container.setInteractive(
+          new Phaser.Geom.Rectangle(-40, -40, 80, 80), // 클릭 영역
+          Phaser.Geom.Rectangle.Contains
+        );
 
-        cellVisualElement.on('pointerdown', () => this.handleCellClick(row, col));
-        this.ironPanVisualCells[row * 3 + col] = cellVisualElement;
+        // 1. 배경 레이어 (접시 - 항상 고정)
+        const background = this.scene.add
+          .image(0, 0, 'plate-cell')
+          .setScale(0.08);
+
+        // 2. 내용물 레이어 (반죽/타코야키 - 처음엔 투명)
+        const content = this.scene.add
+          .image(0, 0, 'plate-cell')
+          .setScale(0.08)
+          .setAlpha(0); // 처음엔 보이지 않음
+
+        // 컨테이너에 레이어들 추가
+        container.add([background, content]);
+
+        // 클릭 이벤트
+        container.on('pointerdown', () => this.handleCellClick(row, col));
+
+        // 레이어 정보 저장
+        this.cellLayers[row][col] = {
+          background,
+          content,
+          container,
+        };
       }
     }
   }
@@ -75,8 +106,12 @@ export class IronPanManager {
     }
   }
 
-  // TODO: 접시 텍스처 철판 고정, 위에 올린 것만 변경
-  private addBatter(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
+  private addBatter(
+    cellState: IronPanCellState,
+    currentTime: number,
+    row: number,
+    col: number
+  ) {
     if (!cellState.hasBatter) {
       this.scene.sound.play('batter-sound');
 
@@ -84,47 +119,59 @@ export class IronPanManager {
       cellState.cookingStartTime = currentTime;
       cellState.cookingLevel = 'raw';
 
-      // 셀의 비주얼 요소 가져오기
-      const cellVisualIndex = row * 3 + col;
-      const cellVisualElement = this.ironPanVisualCells[cellVisualIndex];
+      const layers = this.cellLayers[row][col];
+      const contentLayer = layers.content;
 
-      // 반죽 텍스처로 변경하고 초기 크기를 0으로 설정
-      const texture = TextureHelper.getCellTexture(cellState, cellState.cookingLevel);
-      cellVisualElement.setTexture(texture);
-      cellVisualElement.setScale(0); // 초기 크기 0
+      // 반죽 텍스처 설정
+      const texture = TextureHelper.getBatterTexture(cellState.cookingLevel);
+      contentLayer.setTexture(texture);
 
-      // 부어지는 애니메이션 효과
-      this.scene.tweens.add({
-        targets: cellVisualElement,
-        scaleX: 0.08, // 원래 크기로
-        scaleY: 0.08, // 원래 크기로
-        duration: 600, // 0.6초 동안
-        ease: 'Back.easeOut', // 부드러운 이징 효과 (살짝 튀는 느낌)
-        onComplete: () => {
-          console.log(`[${row},${col}] 반죽 추가 완료`);
-        },
-      });
-
-      // 추가 효과 1: 살짝 회전하면서 부어지는 느낌
-      this.scene.tweens.add({
-        targets: cellVisualElement,
-        rotation: Phaser.Math.DegToRad(5), // 5도 회전
-        duration: 300,
-        ease: 'Power2.easeOut',
-        yoyo: true, // 다시 원래대로
-        repeat: 1,
-      });
-
-      // 추가 효과 2: 위에서 아래로 떨어지는 느낌 (선택사항)
-      const originalY = cellVisualElement.y;
-      cellVisualElement.y = originalY - 20; // 살짝 위에서 시작
-      this.scene.tweens.add({
-        targets: cellVisualElement,
-        y: originalY,
-        duration: 400,
-        ease: 'Bounce.easeOut',
-      });
+      // 애니메이션 시퀀스
+      this.animateBatterPour(contentLayer, row, col);
     }
+  }
+
+  private animateBatterPour(
+    contentLayer: Phaser.GameObjects.Image,
+    row: number,
+    col: number
+  ) {
+    // 1. 초기 상태: 투명하고 작게
+    contentLayer.setAlpha(0);
+    contentLayer.setScale(0);
+
+    // 2. 페이드인과 동시에 크기 증가 (부어지는 효과)
+    this.scene.tweens.add({
+      targets: contentLayer,
+      alpha: 1,
+      scaleX: 0.08,
+      scaleY: 0.08,
+      duration: 600,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        console.log(`[${row},${col}] 반죽 추가 완료`);
+      },
+    });
+
+    // 3. 살짝 회전하는 효과 (부어지는 느낌)
+    this.scene.tweens.add({
+      targets: contentLayer,
+      rotation: Phaser.Math.DegToRad(5),
+      duration: 300,
+      ease: 'Power2.easeOut',
+      yoyo: true,
+      repeat: 1,
+    });
+
+    // 4. 위에서 아래로 떨어지는 효과
+    const originalY = contentLayer.y;
+    contentLayer.y = originalY - 20;
+    this.scene.tweens.add({
+      targets: contentLayer,
+      y: originalY,
+      duration: 400,
+      ease: 'Bounce.easeOut',
+    });
   }
 
   private addOctopus(cellState: IronPanCellState, row: number, col: number) {
@@ -132,16 +179,72 @@ export class IronPanManager {
       this.scene.sound.play('octopus-sound');
 
       cellState.hasOctopus = true;
-      this.updateCellVisual(row, col);
+
+      const layers = this.cellLayers[row][col];
+
+      // 문어 추가 애니메이션 (반죽 텍스처 변경과 함께)
+      this.animateOctopusAdd(layers.content, row, col);
+
       console.log(`[${row},${col}] 문어 추가`);
     }
   }
 
-  private handleStick(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
+  private animateOctopusAdd(
+    contentLayer: Phaser.GameObjects.Image,
+    row: number,
+    col: number
+  ) {
+    // 1. 현재 반죽 텍스처를 임시로 어둡게 만들기 (문어가 들어가는 효과)
+    contentLayer.setTint(0x888888);
+
+    // 2. 살짝 흔들리는 효과 (문어가 들어가면서 반죽이 흔들림)
+    this.scene.tweens.add({
+      targets: contentLayer,
+      x: 2,
+      duration: 100,
+      ease: 'Power2.easeInOut',
+      yoyo: true,
+      repeat: 3,
+      onComplete: () => {
+        // 3. 문어가 들어간 새로운 텍스처로 변경
+        this.updateContentTexture(row, col);
+        contentLayer.clearTint();
+
+        // 4. 살짝 크기가 커지는 효과 (문어가 들어가서 부풀어오름)
+        this.scene.tweens.add({
+          targets: contentLayer,
+          scaleX: 0.09,
+          scaleY: 0.09,
+          duration: 300,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            // 5. 원래 크기로 돌아감
+            this.scene.tweens.add({
+              targets: contentLayer,
+              scaleX: 0.08,
+              scaleY: 0.08,
+              duration: 200,
+              ease: 'Power2.easeOut',
+            });
+          },
+        });
+      },
+    });
+  }
+
+  private handleStick(
+    cellState: IronPanCellState,
+    currentTime: number,
+    row: number,
+    col: number
+  ) {
     if (!cellState.hasBatter) return;
     this.scene.sound.play('stick-sound');
 
-    const currentCookingLevel = calculateCurrentCookingLevel(cellState, currentTime);
+    const currentCookingLevel = calculateCurrentCookingLevel(
+      cellState,
+      currentTime
+    );
 
     if (cellState.hasOctopus && currentCookingLevel === 'raw') {
       this.flipTakoyaki(cellState, row, col);
@@ -155,9 +258,42 @@ export class IronPanManager {
   private flipTakoyaki(cellState: IronPanCellState, row: number, col: number) {
     if (!cellState.isFlipped) {
       cellState.isFlipped = true;
-      this.updateCellVisual(row, col);
-      console.log(`[${row},${col}] 뒤집기 완료`);
+
+      const layers = this.cellLayers[row][col];
+
+      // 뒤집기 애니메이션 (content 레이어만 사용)
+      this.animateFlip(layers.content, undefined, () => {
+        // 애니메이션 완료 후 텍스처 업데이트
+        this.updateContentTexture(row, col);
+        console.log(`[${row},${col}] 뒤집기 완료`);
+      });
     }
+  }
+
+  private animateFlip(
+    contentLayer: Phaser.GameObjects.Image,
+    octopusLayer?: Phaser.GameObjects.Image,
+    onComplete?: () => void
+  ) {
+    // 문어 레이어는 더 이상 사용하지 않으므로 contentLayer만 뒤집기
+    this.scene.tweens.add({
+      targets: contentLayer,
+      scaleY: 0,
+      duration: 200,
+      ease: 'Power2.easeIn',
+      onComplete: () => {
+        // 중간에 텍스처 변경 (뒤집힌 상태)
+        if (onComplete) onComplete();
+
+        // 다시 원래 크기로
+        this.scene.tweens.add({
+          targets: contentLayer,
+          scaleY: 0.08,
+          duration: 200,
+          ease: 'Power2.easeOut',
+        });
+      },
+    });
   }
 
   private moveToPlate(cellState: IronPanCellState, row: number, col: number) {
@@ -168,25 +304,88 @@ export class IronPanManager {
         cookingLevel: 'perfect',
       });
 
-      this.resetCell(cellState);
-      this.updateCellVisual(row, col);
+      // 접시로 이동 애니메이션
+      const layers = this.cellLayers[row][col];
+      this.animateMoveToPlate(layers, () => {
+        // 애니메이션 완료 후 셀 리셋
+        this.resetCell(cellState);
+        this.resetCellVisual(row, col);
 
-      // 중요: PlatesManager의 updateDisplay() 호출
-      if (this.platesManager) {
-        this.platesManager.updateDisplay();
-      }
+        if (this.platesManager) {
+          this.platesManager.updateDisplay();
+        }
+      });
 
-      console.log(`[${row},${col}] 접시로 이동! 총 ${platesWithTakoyaki.length}개`);
-      console.log('현재 접시 상태:', platesWithTakoyaki); // 디버깅용
+      console.log(
+        `[${row},${col}] 접시로 이동! 총 ${platesWithTakoyaki.length}개`
+      );
     } else {
       console.log('접시가 가득 찼습니다! (최대 10개)');
     }
   }
 
-  private discardTakoyaki(cellState: IronPanCellState, row: number, col: number) {
-    this.resetCell(cellState);
-    this.updateCellVisual(row, col);
+  private animateMoveToPlate(layers: CellLayers, onComplete: () => void) {
+    // content 레이어만 이동 (문어가 포함된 반죽)
+    this.scene.tweens.add({
+      targets: layers.content,
+      y: '-=50',
+      alpha: 0,
+      scaleX: 0.04,
+      scaleY: 0.04,
+      duration: 800,
+      ease: 'Power2.easeIn',
+      onComplete: onComplete,
+    });
+  }
+
+  private discardTakoyaki(
+    cellState: IronPanCellState,
+    row: number,
+    col: number
+  ) {
+    const layers = this.cellLayers[row][col];
+
+    // 타서 버리는 애니메이션 (빨갛게 깜빡이고 사라짐)
+    this.animateDiscard(layers, () => {
+      this.resetCell(cellState);
+      this.resetCellVisual(row, col);
+    });
+
     console.log(`[${row},${col}] 타서 버림`);
+  }
+
+  private animateDiscard(layers: CellLayers, onComplete: () => void) {
+    // content 레이어만 처리 (문어가 포함된 반죽)
+    const target = layers.content;
+
+    // 빨간색 틴트로 타는 효과
+    target.setTint(0xff0000);
+
+    // 깜빡이는 효과
+    this.scene.tweens.add({
+      targets: target,
+      alpha: 0.3,
+      duration: 200,
+      ease: 'Power2.easeInOut',
+      yoyo: true,
+      repeat: 3,
+      onComplete: () => {
+        // 사라지는 애니메이션
+        this.scene.tweens.add({
+          targets: target,
+          alpha: 0,
+          scaleX: 0,
+          scaleY: 0,
+          duration: 300,
+          ease: 'Power2.easeIn',
+          onComplete: () => {
+            // 틴트 제거
+            target.clearTint();
+            onComplete();
+          },
+        });
+      },
+    });
   }
 
   private resetCell(cellState: IronPanCellState) {
@@ -200,13 +399,35 @@ export class IronPanManager {
     });
   }
 
-  private updateCellVisual(row: number, col: number) {
-    const cellState = ironPanCells[row][col];
-    const cellVisualIndex = row * 3 + col;
-    const cellVisualElement = this.ironPanVisualCells[cellVisualIndex];
+  private resetCellVisual(row: number, col: number) {
+    const layers = this.cellLayers[row][col];
 
-    const texture = TextureHelper.getCellTexture(cellState, cellState.cookingLevel);
-    cellVisualElement.setTexture(texture);
+    // content 레이어만 초기화 (더 이상 별도의 octopus 레이어 없음)
+    layers.content.setAlpha(0);
+    layers.content.setScale(0.08);
+    layers.content.y = 0;
+    layers.content.x = 0; // x도 초기화
+    layers.content.clearTint();
+  }
+
+  private updateContentTexture(row: number, col: number) {
+    const cellState = ironPanCells[row][col];
+    const layers = this.cellLayers[row][col];
+
+    if (!cellState.hasBatter) {
+      layers.content.setAlpha(0);
+      return;
+    }
+
+    // 현재 상태에 맞는 텍스처 설정
+    const texture = TextureHelper.getBatterTexture(
+      cellState.cookingLevel,
+      cellState.hasOctopus,
+      cellState.isFlipped
+    );
+
+    layers.content.setTexture(texture);
+    layers.content.setAlpha(1);
   }
 
   updateAllCells() {
@@ -219,11 +440,17 @@ export class IronPanManager {
         const cellState = ironPanCells[row][col];
 
         if (cellState.hasBatter && !cellState.isMovedToPlate) {
-          const newCookingLevel = calculateCurrentCookingLevel(cellState, currentTime);
+          const newCookingLevel = calculateCurrentCookingLevel(
+            cellState,
+            currentTime
+          );
 
           if (cellState.cookingLevel !== newCookingLevel) {
             cellState.cookingLevel = newCookingLevel;
-            this.updateCellVisual(row, col);
+
+            // 레이어 시스템으로 업데이트
+            this.updateContentTexture(row, col);
+
             console.log(`[${row},${col}] ${newCookingLevel}로 변경`);
           }
         }

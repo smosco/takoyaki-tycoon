@@ -35,36 +35,53 @@ export class AssetLoader {
   }
 
   private static loadIronPanAssets(scene: Phaser.Scene) {
-    scene.load.image('plate-cell-batter-raw', 'assets/batter-raw.png');
-    scene.load.image('plate-cell-batter-perfect', 'assets/plate-cell-batter-perfect.png');
-    scene.load.image('plate-cell-batter-burnt', 'assets/plate-cell-batter-burnt.png');
-    scene.load.image('plate-cell-batter-raw-octopus', 'assets/plate-cell-batter-raw-octopus.png');
+    scene.load.image('batter-raw', 'assets/batter-raw.png');
+    scene.load.image('batter-perfect', 'assets/batter-perfect.png');
+    scene.load.image('batter-burnt', 'assets/batter-burnt.png');
+
+    scene.load.image('octopus-piece', 'assets/octopus-piece.png');
     scene.load.image(
-      'plate-cell-batter-perfect-octopus',
-      'assets/plate-cell-batter-perfect-octopus.png'
+      'takoyaki-raw-with-octopus',
+      'assets/takoyaki-raw-with-octopus.png'
     );
     scene.load.image(
-      'plate-cell-batter-burnt-octopus',
-      'assets/plate-cell-batter-burnt-octopus.png'
-    );
-    scene.load.image('plate-cell-batter-raw-flipped', 'assets/plate-cell-batter-raw-flipped.png');
-    scene.load.image(
-      'plate-cell-batter-perfect-flipped',
-      'assets/plate-cell-batter-perfect-flipped.png'
+      'takoyaki-perfect-with-octopus',
+      'assets/takoyaki-perfect-with-octopus.png'
     );
     scene.load.image(
-      'plate-cell-batter-burnt-flipped',
-      'assets/plate-cell-batter-burnt-flipped.png'
+      'takoyaki-burnt-with-octopus',
+      'assets/takoyaki-burnt-with-octopus.png'
     );
   }
 
   private static loadPlateAssets(scene: Phaser.Scene) {
     scene.load.image('tako-position', 'assets/tako-position.png');
+    scene.load.image('tako-raw', 'assets/tako-raw.png');
     scene.load.image('tako-perfect', 'assets/tako-perfect.png');
+    scene.load.image('tako-burnt', 'assets/tako-burnt.png');
+
+    scene.load.image('takoyaki-raw-flipped', 'assets/takoyaki-raw-flipped.png');
+    scene.load.image(
+      'takoyaki-perfect-flipped',
+      'assets/takoyaki-perfect-flipped.png'
+    );
+    scene.load.image(
+      'takoyaki-burnt-flipped',
+      'assets/takoyaki-burnt-flipped.png'
+    );
     scene.load.image('tako-perfect-sauce', 'assets/tako-perfect-sauce.png');
-    scene.load.image('tako-perfect-sauce-negi', 'assets/tako-perfect-sauce-negi.png');
-    scene.load.image('tako-perfect-sauce-katsuobushi', 'assets/tako-perfect-sauce-katsuobushi.png');
-    scene.load.image('tako-perfect-sauce-nori', 'assets/tako-perfect-sauce-nori.png');
+    scene.load.image(
+      'tako-perfect-sauce-negi',
+      'assets/tako-perfect-sauce-negi.png'
+    );
+    scene.load.image(
+      'tako-perfect-sauce-katsuobushi',
+      'assets/tako-perfect-sauce-katsuobushi.png'
+    );
+    scene.load.image(
+      'tako-perfect-sauce-nori',
+      'assets/tako-perfect-sauce-nori.png'
+    );
   }
 
   private static loadToolAssets(scene: Phaser.Scene) {
