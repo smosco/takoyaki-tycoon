@@ -154,8 +154,6 @@ export class EndScene extends Phaser.Scene {
    */
   private calculateRating(): { text: string; color: string; description: string } {
     const score = gameScore.value;
-    const satisfactionRate =
-      gameStats.servedCustomers > 0 ? gameStats.happyCustomers / gameStats.servedCustomers : 0;
 
     if (score >= 2000) {
       return {
