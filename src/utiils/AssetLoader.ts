@@ -22,6 +22,7 @@ export class AssetLoader {
   }
 
   private static loadBasicAssets(scene: Phaser.Scene) {
+    scene.load.image('start-background', 'assets/start-background.png');
     scene.load.image('background', 'assets/background.png');
     scene.load.image('button', 'assets/button.png');
     scene.load.image('tent', 'assets/tent.png');

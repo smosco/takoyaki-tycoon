@@ -42,6 +42,8 @@ export class CustomerManager {
   constructor(scene: Phaser.Scene, platesManager: PlatesManager) {
     this.scene = scene;
     this.platesManager = platesManager;
+    // TODO: PlatesManager이 사용되지 않아 발생하는 빌드 에러 수정 필요
+    console.log(this.platesManager);
     this.createCustomerArea();
   }
 
@@ -295,9 +297,9 @@ export class CustomerManager {
     this.currentMoodBubble = { graphics: bubble, text: bubbleText };
 
     // 2.5초 후 자동으로 사라짐
-    this.scene.time.delayedCall(2500, () => {
-      this.clearMoodBubble();
-    });
+    // this.scene.time.delayedCall(2500, () => {
+    //   this.clearMoodBubble();
+    // });
 
     // 말풍선 등장 애니메이션
     bubble.setScale(0);

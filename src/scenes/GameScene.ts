@@ -11,7 +11,6 @@ import { TopUI } from '../ui/TopUI';
 import { IronPanManager } from '../game/IronPanManager';
 import { PlatesManager } from '../game/PlatesManager';
 import { CustomerManager } from '../game/CustomerManager';
-import { AssetLoader } from '../utiils/AssetLoader';
 
 export class GameScene extends Phaser.Scene {
   private topUI!: TopUI;
@@ -21,10 +20,6 @@ export class GameScene extends Phaser.Scene {
 
   constructor() {
     super('GameScene');
-  }
-
-  preload() {
-    AssetLoader.loadAllAssets(this);
   }
 
   create() {
