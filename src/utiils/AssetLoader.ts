@@ -35,7 +35,7 @@ export class AssetLoader {
   }
 
   private static loadIronPanAssets(scene: Phaser.Scene) {
-    scene.load.image('plate-cell-batter-raw', 'assets/plate-cell-batter-raw.png');
+    scene.load.image('plate-cell-batter-raw', 'assets/batter-raw.png');
     scene.load.image('plate-cell-batter-perfect', 'assets/plate-cell-batter-perfect.png');
     scene.load.image('plate-cell-batter-burnt', 'assets/plate-cell-batter-burnt.png');
     scene.load.image('plate-cell-batter-raw-octopus', 'assets/plate-cell-batter-raw-octopus.png');
