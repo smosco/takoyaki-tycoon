@@ -267,38 +267,52 @@ export class CustomerManager {
   private showOrderBubble(x: number, y: number, order: CustomerOrder) {
     this.clearOrderBubble();
 
-    const width = 180;
+    const width = 200;
     const height = 80;
+    const arrowHeight = 24;
 
     const bubble = this.scene.add.graphics();
     bubble.setDepth(20);
 
-    bubble.fillStyle(0xfff3d1, 0.95);
-    bubble.lineStyle(3, 0x996633);
-    bubble.fillRoundedRect(x, y, width, height, 16);
-    bubble.strokeRoundedRect(x, y, width, height, 16);
-    bubble.beginPath();
-    bubble.moveTo(x + 80, y + height);
-    bubble.lineTo(x + 95, y + height + 15);
-    bubble.lineTo(x + 90, y + height);
-    bubble.closePath();
-    bubble.fillPath();
-    bubble.strokePath();
+    // 말풍선 배경 색
+    const bubbleColor = 0xfff6e0;
 
+    // 둥글고 감성적인 말풍선 배경
+    bubble.fillStyle(bubbleColor, 1);
+    bubble.fillRoundedRect(x, y, width, height, 32);
+
+    // 꼬리 위치
+    const point1X = x + width - 110;
+    const point1Y = y + height - 1;
+    const point2X = x + width - 80;
+    const point2Y = y + height - 1;
+    const point3X = x + width - 75;
+    const point3Y = y + height + arrowHeight;
+
+    // 꼬리 채우기
+    bubble.fillStyle(bubbleColor, 1);
+    bubble.fillTriangle(point1X, point1Y, point2X, point2Y, point3X, point3Y);
+
+    // 텍스트 추가
     const orderText = this.scene.add
-      .text(x + width / 2, y + 40, `타코야끼 ${order.totalQuantity}개 주세요`, {
+      .text(x + width / 2, y + 40, `타코야끼 ${order.totalQuantity}개 주문이다냥!`, {
         fontSize: '16px',
         color: '#cc2200',
-        fontStyle: 'bold',
+        fontFamily: 'Arial',
+        wordWrap: {
+          width: width - 24,
+          useAdvancedWrap: true,
+        },
       })
       .setOrigin(0.5)
       .setDepth(21);
 
     this.currentOrderBubble = { graphics: bubble, text: orderText };
 
-    this.scene.time.delayedCall(2000, () => {
-      this.clearOrderBubble();
-    });
+    // 2초 후 제거
+    // this.scene.time.delayedCall(2000, () => {
+    //   this.clearOrderBubble();
+    // });
   }
 
   showProductionPanel(x: number, y: number, order: CustomerOrder) {
@@ -382,8 +396,8 @@ export class CustomerManager {
 
     this.clearMoodBubble();
 
-    const x = this.customerSprite.x - 50;
-    const y = this.customerSprite.y - 250;
+    const x = this.customerSprite.x - 180;
+    const y = this.customerSprite.y - 190;
     const width = 160;
     const height = 60;
 
@@ -424,20 +438,24 @@ export class CustomerManager {
     const circleStartY = y + height;
 
     // 큰 동그라미
-    bubble.fillCircle(circleX - 2, circleStartY + 12, 6);
-    bubble.strokeCircle(circleX - 2, circleStartY + 12, 6);
+    bubble.fillCircle(circleX + 1, circleStartY + 12, 7);
+    bubble.strokeCircle(circleX + 1, circleStartY + 12, 7);
 
     // 중간 동그라미
-    bubble.fillCircle(circleX - 12, circleStartY + 22, 4);
-    bubble.strokeCircle(circleX - 12, circleStartY + 22, 4);
+    bubble.fillCircle(circleX + 12, circleStartY + 24, 5);
+    bubble.strokeCircle(circleX + 12, circleStartY + 24, 5);
 
     // 텍스트
     const bubbleText = this.scene.add
       .text(x + width / 2, y + height / 2, message, {
-        fontSize: '14px',
+        fontSize: '16px',
         color: textColor,
-        fontStyle: 'bold',
         align: 'center',
+        fontFamily: 'Arial',
+        wordWrap: {
+          width: width - 24,
+          useAdvancedWrap: true,
+        },
       })
       .setOrigin(0.5)
       .setDepth(26);
