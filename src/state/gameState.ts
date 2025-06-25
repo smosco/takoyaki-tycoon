@@ -1,6 +1,9 @@
-export type Sauce = 'okonomiyaki';
-export type Topping = 'negi' | 'katsuobushi' | 'nori';
-export type CookingLevel = 'raw' | 'perfect' | 'burnt';
+export interface Customer {
+  id: string;
+  order: CustomerOrder;
+  isWaiting: boolean;
+  patience: number; // 0-100, 시간이 지나면 감소
+}
 
 // 손님 주문
 export interface CustomerOrder {
@@ -24,13 +27,6 @@ export interface CustomerOrder {
   preferredCookingLevel: 'perfect'; // 무조건 완벽하게 익힌 것만
 }
 
-export interface Customer {
-  id: string;
-  order: CustomerOrder;
-  isWaiting: boolean;
-  patience: number; // 0-100, 시간이 지나면 감소
-}
-
 export type CustomerMood = 'happy' | 'neutral' | 'angry';
 
 export type Tool =
@@ -42,6 +38,10 @@ export type Tool =
   | 'katsuobushi'
   | 'nori'
   | 'serve';
+
+export type Sauce = 'okonomiyaki';
+export type Topping = 'negi' | 'katsuobushi' | 'nori';
+export type CookingLevel = 'raw' | 'perfect' | 'burnt';
 
 /**
  * 철판에서 조리 중인 타코야끼 상태
@@ -128,23 +128,6 @@ export function calculateCurrentCookingLevel(
 }
 
 /**
- * 익힘 정도에 따른 타코야끼 색상을 반환합니다.
- *
- * @param cookingLevel - 익힘 정도
- * @returns 해당하는 색상 코드
- */
-export function getTakoyakiColorByCookingLevel(cookingLevel: CookingLevel): string {
-  switch (cookingLevel) {
-    case 'raw':
-      return 'plate-cell-batter'; // 노란색 (반죽)
-    case 'perfect':
-      return 'plate-cell-perfect'; // 주황색 (적당히 익음)
-    case 'burnt':
-      return 'plate-cell-burnt'; // 갈색 (탐)
-  }
-}
-
-/**
  * 주어진 도구가 토핑인지 확인하는 타입 가드 함수
  *
  * @param tool - 확인할 도구
@@ -162,50 +145,132 @@ export function isTopping(tool: Tool): tool is Topping {
 const moodCache = new Map<number, { mood: CustomerMood; message: string }>();
 
 /**
- * 랜덤한 손님 주문을 생성합니다.
- * 총 개수를 정하고 토핑별로 개수를 랜덤하게 분배합니다.
- * 이제 최대 27개까지 주문 가능합니다.
- *
- * @returns 생성된 랜덤 주문
+ * 레벨에 따른 주문 범위와 토핑 복잡도를 계산합니다.
+ * @param level - 현재 레벨
+ * @returns 주문 설정 객체
+ */
+export function getLevelOrderConfig(level: number): {
+  minQuantity: number;
+  maxQuantity: number;
+  toppingComplexity: number; // 0-1 사이값, 높을수록 다양한 토핑
+} {
+  // 레벨에 따른 최소 개수 (3개부터 시작해서 점진적 증가)
+  const minQuantity = Math.min(3 + Math.floor(level / 2), 15);
+
+  // 레벨에 따른 최대 개수 (6개부터 시작해서 27개까지)
+  const maxQuantity = Math.min(6 + level * 2, 27);
+
+  // 토핑 복잡도 (레벨이 높을수록 다양한 토핑 조합)
+  const toppingComplexity = Math.min(0.2 + (level - 1) * 0.08, 1.0);
+
+  return {
+    minQuantity,
+    maxQuantity,
+    toppingComplexity,
+  };
+}
+
+/**
+ * 토핑 복잡도에 따른 토핑 분배
+ * @param totalQuantity - 총 타코야끼 개수
+ * @param complexity - 토핑 복잡도 (0-1)
+ */
+function distributeToppings(
+  totalQuantity: number,
+  complexity: number
+): { negi: number; katsuobushi: number; nori: number; none: number } {
+  const result = { negi: 0, katsuobushi: 0, nori: 0, none: 0 };
+  const toppings: (keyof typeof result)[] = ['negi', 'katsuobushi', 'nori', 'none'];
+  let remaining = totalQuantity;
+
+  if (complexity <= 0.3) {
+    // 낮은 복잡도: 주로 1가지 토핑
+    const mainTopping = toppings[Math.floor(Math.random() * toppings.length)];
+    result[mainTopping] = totalQuantity;
+  } else if (complexity <= 0.6) {
+    // 중간 복잡도: 2가지 토핑
+    const topping1 = toppings[Math.floor(Math.random() * toppings.length)];
+    let topping2 = toppings[Math.floor(Math.random() * toppings.length)];
+
+    // 같은 토핑이 선택되면 다른 토핑 선택
+    while (topping2 === topping1) {
+      topping2 = toppings[Math.floor(Math.random() * toppings.length)];
+    }
+
+    const split = Math.floor(totalQuantity / 2);
+    result[topping1] = split;
+    result[topping2] = totalQuantity - split;
+  } else {
+    // 높은 복잡도: 모든 토핑 골고루
+
+    // 각 토핑에 최소 1개씩 배정 (가능한 경우)
+    if (totalQuantity >= 4) {
+      toppings.forEach((topping) => {
+        result[topping] = 1;
+        remaining -= 1;
+      });
+    }
+
+    // 나머지 수량을 랜덤하게 분배
+    while (remaining > 0) {
+      const randomTopping = toppings[Math.floor(Math.random() * toppings.length)];
+      result[randomTopping]++;
+      remaining--;
+    }
+  }
+
+  // 검증: 총합이 맞는지 확인
+  const sum = result.negi + result.katsuobushi + result.nori + result.none;
+  if (sum !== totalQuantity) {
+    console.error(`토핑 분배 오류: 총 ${totalQuantity}개 주문, 분배된 토핑 ${sum}개`);
+    console.error('토핑 분배:', result);
+
+    // 오류 수정: 차이만큼 none에 추가/차감
+    const diff = totalQuantity - sum;
+    result.none = Math.max(0, result.none + diff);
+  }
+
+  return result;
+}
+
+/**
+ * 레벨 기반 랜덤 주문 생성 (기존 generateRandomOrder 함수 대체)
  */
 export function generateRandomOrder(): CustomerOrder {
-  // 3개부터 27개까지 주문 가능 (3x3 철판이 3개 = 최대 27개)
-  const totalQuantity = Math.floor(Math.random() * 25) + 3; // 3~27개
+  const config = getLevelOrderConfig(gameLevel.value);
 
-  // 토핑 개수를 랜덤하게 분배
-  let remainingQuantity = totalQuantity;
-  const toppingBreakdown = {
-    negi: 0,
-    katsuobushi: 0,
-    nori: 0,
-    none: 0,
-  };
+  // 주문 개수 결정
+  const quantityRange = config.maxQuantity - config.minQuantity + 1;
+  const totalQuantity = config.minQuantity + Math.floor(Math.random() * quantityRange);
 
-  // 각 토핑에 랜덤하게 할당
-  const toppings: (keyof typeof toppingBreakdown)[] = ['negi', 'katsuobushi', 'nori', 'none'];
+  // 토핑 분배
+  const toppingBreakdown = distributeToppings(totalQuantity, config.toppingComplexity);
 
-  for (let i = 0; i < toppings.length && remainingQuantity > 0; i++) {
-    if (i === toppings.length - 1) {
-      // 마지막 토핑에는 남은 모든 개수 할당
-      toppingBreakdown[toppings[i]] = remainingQuantity;
-    } else {
-      // 랜덤하게 0 ~ 남은 개수만큼 할당
-      const maxAssign = Math.min(
-        remainingQuantity,
-        Math.floor(remainingQuantity / (toppings.length - i)) + 1
-      );
-      const assigned = Math.floor(Math.random() * (maxAssign + 1));
-      toppingBreakdown[toppings[i]] = assigned;
-      remainingQuantity -= assigned;
-    }
+  // 검증 로그
+  const sum =
+    toppingBreakdown.negi +
+    toppingBreakdown.katsuobushi +
+    toppingBreakdown.nori +
+    toppingBreakdown.none;
+  console.log(
+    `레벨 ${gameLevel.value} 주문: ${totalQuantity}개 (복잡도: ${config.toppingComplexity.toFixed(
+      2
+    )})`
+  );
+  console.log(
+    `토핑 분배 - 파:${toppingBreakdown.negi}, 가츠오:${toppingBreakdown.katsuobushi}, 김:${toppingBreakdown.nori}, 없음:${toppingBreakdown.none} (총:${sum})`
+  );
+
+  if (sum !== totalQuantity) {
+    console.error(`토핑 분배 오류 발생! 주문:${totalQuantity}, 분배:${sum}`);
   }
 
   return {
     totalQuantity,
-    remainingQuantity: totalQuantity, // 처음엔 전체가 남은 개수
+    remainingQuantity: totalQuantity,
     sauceRequired: true,
     toppingBreakdown,
-    remainingToppingBreakdown: { ...toppingBreakdown }, // 복사해서 초기화
+    remainingToppingBreakdown: { ...toppingBreakdown },
     preferredCookingLevel: 'perfect',
   };
 }
