@@ -310,9 +310,9 @@ export class CustomerManager {
     this.currentOrderBubble = { graphics: bubble, text: orderText };
 
     // 2초 후 제거
-    // this.scene.time.delayedCall(2000, () => {
-    //   this.clearOrderBubble();
-    // });
+    this.scene.time.delayedCall(2000, () => {
+      this.clearOrderBubble();
+    });
   }
 
   showProductionPanel(x: number, y: number, order: CustomerOrder) {
