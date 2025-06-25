@@ -50,8 +50,9 @@ export class StartScene extends Phaser.Scene {
   private createTitle() {
     // 메인 타이틀
     const title = this.add
-      .text(400, 150, 'Takoyaki Tycoon', {
+      .text(400, 150, '타코야끼를 달라냥', {
         fontSize: '56px',
+        fontStyle: 'bold',
         color: '#fff',
         fontFamily: 'Arial Black',
         stroke: '#ff6b35',
@@ -74,15 +75,68 @@ export class StartScene extends Phaser.Scene {
 
   private createButtons() {
     // 시작 버튼
-    const startButton = this.createButton(400, 380, 240, 60, 'START', 0x4caf50, 0x2e7d32);
+    const startButton = this.add
+      .image(150, 380, 'game-start-button')
+      .setScale(0.45)
+      .setInteractive(); // Interactive 설정 추가
+
     startButton.on('pointerdown', () => {
+      console.log('게임 시작 버튼 클릭');
       this.startGame();
     });
 
+    // 호버 효과 추가
+    startButton.on('pointerover', () => {
+      this.game.canvas.style.cursor = 'pointer';
+      this.tweens.add({
+        targets: startButton,
+        scale: 0.5,
+        duration: 100,
+        ease: 'Sine.easeOut',
+      });
+    });
+
+    startButton.on('pointerout', () => {
+      this.game.canvas.style.cursor = 'default';
+      this.tweens.add({
+        targets: startButton,
+        scale: 0.45,
+        duration: 100,
+        ease: 'Sine.easeOut',
+      });
+    });
+
     // 방법 버튼
-    const howToButton = this.createButton(400, 460, 240, 60, 'MANUAL', 0x2196f3, 0x1565c0);
+    const howToButton = this.add
+      .image(150, 490, 'game-manual-button')
+      .setScale(0.45)
+      .setInteractive(); // Interactive 설정 추가
+
+    // 올바른 이벤트 연결 (startButton이 아니라 howToButton)
     howToButton.on('pointerdown', () => {
+      console.log('게임 방법 버튼 클릭');
       this.showHowToPlay();
+    });
+
+    // 호버 효과 추가
+    howToButton.on('pointerover', () => {
+      this.game.canvas.style.cursor = 'pointer';
+      this.tweens.add({
+        targets: howToButton,
+        scale: 0.5,
+        duration: 100,
+        ease: 'Sine.easeOut',
+      });
+    });
+
+    howToButton.on('pointerout', () => {
+      this.game.canvas.style.cursor = 'default';
+      this.tweens.add({
+        targets: howToButton,
+        scale: 0.45,
+        duration: 100,
+        ease: 'Sine.easeOut',
+      });
     });
 
     // 버튼 등장 애니메이션
@@ -101,63 +155,8 @@ export class StartScene extends Phaser.Scene {
     });
   }
 
-  private createButton(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    text: string,
-    fillColor: number,
-    strokeColor: number
-  ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y);
-
-    // 버튼 배경
-    const bg = this.add.rectangle(0, 0, width, height, fillColor).setStrokeStyle(3, strokeColor);
-
-    // 버튼 텍스트
-    const buttonText = this.add
-      .text(0, 0, text, {
-        fontSize: '22px',
-        color: '#fff',
-        fontFamily: 'Arial Bold',
-      })
-      .setOrigin(0.5);
-
-    container.add([bg, buttonText]);
-    container.setSize(width, height);
-    container.setInteractive();
-
-    // 호버 효과
-    container.on('pointerover', () => {
-      bg.setFillStyle(fillColor + 0x111111); // 약간 밝게
-      this.game.canvas.style.cursor = 'pointer';
-      this.tweens.add({
-        targets: container,
-        scaleX: 1.05,
-        scaleY: 1.05,
-        duration: 200,
-        ease: 'Power2.easeOut',
-      });
-    });
-
-    container.on('pointerout', () => {
-      bg.setFillStyle(fillColor);
-      this.game.canvas.style.cursor = 'default';
-      this.tweens.add({
-        targets: container,
-        scaleX: 1,
-        scaleY: 1,
-        duration: 200,
-        ease: 'Power2.easeOut',
-      });
-    });
-
-    return container;
-  }
-
   private startGame() {
-    // 시작 효과음 (있다면)
+    // 시작 효과음
     // this.sound.play('start');
 
     resetGameState(); // 게임 상태 초기화
@@ -183,7 +182,7 @@ export class StartScene extends Phaser.Scene {
 
     // 제목
     const modalTitle = this.add
-      .text(0, -200, '🎮 게임 방법', {
+      .text(0, -200, '게임 방법', {
         fontSize: '28px',
         color: '#ffd700',
         fontFamily: 'Arial Bold',
@@ -192,7 +191,6 @@ export class StartScene extends Phaser.Scene {
 
     // 내용
     const content = [
-      '📋 기본 플레이:',
       '1. 🥣 반죽을 철판에 넣고 🐙 문어를 추가하세요',
       '2. ⏰ 적절한 타이밍에 🥢 꼬챙이로 뒤집으세요',
       '3. 🍽️ 완성된 타코야끼를 접시에 담으세요',
@@ -208,7 +206,7 @@ export class StartScene extends Phaser.Scene {
     ];
 
     const contentText = this.add
-      .text(0, -50, content.join('\n'), {
+      .text(0, 0, content.join('\n'), {
         fontSize: '16px',
         color: '#ffffff',
         align: 'left',
