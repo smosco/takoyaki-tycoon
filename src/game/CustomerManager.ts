@@ -561,7 +561,7 @@ export class CustomerManager {
     if (!gameFlow.isGameActive || !currentCustomer.customer) return;
 
     currentCustomer.customer.patience -= 1;
-    console.log(`인내심 감소: ${currentCustomer.customer.patience}%`);
+    // console.log(`인내심 감소: ${currentCustomer.customer.patience}%`);
 
     if (currentCustomer.customer.patience <= 0) {
       console.log('손님이 화나서 떠났습니다!');

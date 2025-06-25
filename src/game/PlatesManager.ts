@@ -68,6 +68,8 @@ export class PlatesManager {
       case 'negi':
       case 'katsuobushi':
       case 'nori':
+        // 소스가 없는 경우 토핑 추가 불가
+        if (!platesWithTakoyaki[plateIndex].sauce) return;
         this.addTopping(clickedTakoyaki, currentTool, plateIndex);
         break;
     }

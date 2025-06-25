@@ -136,8 +136,6 @@ export class ButtonPanel {
       const buttonToolData = this.toolButtonData[index];
       const isSelected = buttonToolData.tool === currentTool;
 
-      console.log(buttonToolData.tool, currentTool, isSelected);
-
       // 버튼 컨테이너 스타일 업데이트
       if (isSelected) {
         button.setTexture('button');
