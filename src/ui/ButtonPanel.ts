@@ -62,7 +62,6 @@ export class ButtonPanel {
 
     const serveData: { tool: Tool; label: string; image: string }[] = [
       { tool: 'serve', label: '서빙', image: 'tool-serve' },
-      { tool: 'serve', label: '서빙', image: 'tool-serve' },
     ];
 
     const serveButton = this.scene.add
@@ -83,6 +82,7 @@ export class ButtonPanel {
 
     serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
+        currentSelectedTool.current = serveData[0].tool;
         this.onServeCallback();
         this.updateAllButtonStyles();
         this.scene.sound.play('serve-sound');
@@ -135,6 +135,8 @@ export class ButtonPanel {
       const currentTool = currentSelectedTool.current;
       const buttonToolData = this.toolButtonData[index];
       const isSelected = buttonToolData.tool === currentTool;
+
+      console.log(buttonToolData.tool, currentTool, isSelected);
 
       // 버튼 컨테이너 스타일 업데이트
       if (isSelected) {
