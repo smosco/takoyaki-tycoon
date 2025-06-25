@@ -61,15 +61,10 @@ export class IronPanManager {
         );
 
         // 1. 배경 레이어 (접시 - 항상 고정)
-        const background = this.scene.add
-          .image(0, 0, 'plate-cell')
-          .setScale(0.08);
+        const background = this.scene.add.image(0, 0, 'plate-cell').setScale(0.08);
 
         // 2. 내용물 레이어 (반죽/타코야키 - 처음엔 투명)
-        const content = this.scene.add
-          .image(0, 0, 'plate-cell')
-          .setScale(0.08)
-          .setAlpha(0); // 처음엔 보이지 않음
+        const content = this.scene.add.image(0, 0, 'plate-cell').setScale(0.08).setAlpha(0); // 처음엔 보이지 않음
 
         // 컨테이너에 레이어들 추가
         container.add([background, content]);
@@ -106,12 +101,7 @@ export class IronPanManager {
     }
   }
 
-  private addBatter(
-    cellState: IronPanCellState,
-    currentTime: number,
-    row: number,
-    col: number
-  ) {
+  private addBatter(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
     if (!cellState.hasBatter) {
       this.scene.sound.play('batter-sound');
 
@@ -131,11 +121,7 @@ export class IronPanManager {
     }
   }
 
-  private animateBatterPour(
-    contentLayer: Phaser.GameObjects.Image,
-    row: number,
-    col: number
-  ) {
+  private animateBatterPour(contentLayer: Phaser.GameObjects.Image, row: number, col: number) {
     // 1. 초기 상태: 투명하고 작게
     contentLayer.setAlpha(0);
     contentLayer.setScale(0);
@@ -165,7 +151,7 @@ export class IronPanManager {
 
     // 4. 위에서 아래로 떨어지는 효과
     const originalY = contentLayer.y;
-    contentLayer.y = originalY - 20;
+    contentLayer.y = originalY - 10;
     this.scene.tweens.add({
       targets: contentLayer,
       y: originalY,
@@ -189,22 +175,18 @@ export class IronPanManager {
     }
   }
 
-  private animateOctopusAdd(
-    contentLayer: Phaser.GameObjects.Image,
-    row: number,
-    col: number
-  ) {
+  private animateOctopusAdd(contentLayer: Phaser.GameObjects.Image, row: number, col: number) {
     // 1. 현재 반죽 텍스처를 임시로 어둡게 만들기 (문어가 들어가는 효과)
     contentLayer.setTint(0x888888);
 
     // 2. 살짝 흔들리는 효과 (문어가 들어가면서 반죽이 흔들림)
     this.scene.tweens.add({
       targets: contentLayer,
-      x: 2,
-      duration: 100,
+      x: 1,
+      duration: 30,
       ease: 'Power2.easeInOut',
       yoyo: true,
-      repeat: 3,
+      repeat: 2,
       onComplete: () => {
         // 3. 문어가 들어간 새로운 텍스처로 변경
         this.updateContentTexture(row, col);
@@ -215,7 +197,7 @@ export class IronPanManager {
           targets: contentLayer,
           scaleX: 0.09,
           scaleY: 0.09,
-          duration: 300,
+          duration: 100,
           ease: 'Back.easeOut',
           onComplete: () => {
             // 5. 원래 크기로 돌아감
@@ -223,7 +205,7 @@ export class IronPanManager {
               targets: contentLayer,
               scaleX: 0.08,
               scaleY: 0.08,
-              duration: 200,
+              duration: 100,
               ease: 'Power2.easeOut',
             });
           },
@@ -232,19 +214,11 @@ export class IronPanManager {
     });
   }
 
-  private handleStick(
-    cellState: IronPanCellState,
-    currentTime: number,
-    row: number,
-    col: number
-  ) {
+  private handleStick(cellState: IronPanCellState, currentTime: number, row: number, col: number) {
     if (!cellState.hasBatter) return;
     this.scene.sound.play('stick-sound');
 
-    const currentCookingLevel = calculateCurrentCookingLevel(
-      cellState,
-      currentTime
-    );
+    const currentCookingLevel = calculateCurrentCookingLevel(cellState, currentTime);
 
     if (cellState.hasOctopus && currentCookingLevel === 'raw') {
       this.flipTakoyaki(cellState, row, col);
@@ -270,15 +244,12 @@ export class IronPanManager {
     }
   }
 
-  private animateFlip(
-    contentLayer: Phaser.GameObjects.Image,
-    onComplete?: () => void
-  ) {
+  private animateFlip(contentLayer: Phaser.GameObjects.Image, onComplete?: () => void) {
     // 문어 레이어는 더 이상 사용하지 않으므로 contentLayer만 뒤집기
     this.scene.tweens.add({
       targets: contentLayer,
       scaleY: 0,
-      duration: 200,
+      duration: 150,
       ease: 'Power2.easeIn',
       onComplete: () => {
         // 중간에 텍스처 변경 (뒤집힌 상태)
@@ -288,7 +259,7 @@ export class IronPanManager {
         this.scene.tweens.add({
           targets: contentLayer,
           scaleY: 0.08,
-          duration: 200,
+          duration: 150,
           ease: 'Power2.easeOut',
         });
       },
@@ -315,9 +286,7 @@ export class IronPanManager {
         }
       });
 
-      console.log(
-        `[${row},${col}] 접시로 이동! 총 ${platesWithTakoyaki.length}개`
-      );
+      console.log(`[${row},${col}] 접시로 이동! 총 ${platesWithTakoyaki.length}개`);
     } else {
       console.log('접시가 가득 찼습니다! (최대 10개)');
     }
@@ -327,21 +296,18 @@ export class IronPanManager {
     // content 레이어만 이동 (문어가 포함된 반죽)
     this.scene.tweens.add({
       targets: layers.content,
+      x: '+=80',
       y: '-=50',
       alpha: 0,
       scaleX: 0.04,
       scaleY: 0.04,
-      duration: 800,
+      duration: 500,
       ease: 'Power2.easeIn',
       onComplete: onComplete,
     });
   }
 
-  private discardTakoyaki(
-    cellState: IronPanCellState,
-    row: number,
-    col: number
-  ) {
+  private discardTakoyaki(cellState: IronPanCellState, row: number, col: number) {
     const layers = this.cellLayers[row][col];
 
     // 타서 버리는 애니메이션 (빨갛게 깜빡이고 사라짐)
@@ -364,10 +330,10 @@ export class IronPanManager {
     this.scene.tweens.add({
       targets: target,
       alpha: 0.3,
-      duration: 200,
+      duration: 100,
       ease: 'Power2.easeInOut',
       yoyo: true,
-      repeat: 3,
+      repeat: 2,
       onComplete: () => {
         // 사라지는 애니메이션
         this.scene.tweens.add({
@@ -375,7 +341,7 @@ export class IronPanManager {
           alpha: 0,
           scaleX: 0,
           scaleY: 0,
-          duration: 300,
+          duration: 100,
           ease: 'Power2.easeIn',
           onComplete: () => {
             // 틴트 제거
@@ -439,10 +405,7 @@ export class IronPanManager {
         const cellState = ironPanCells[row][col];
 
         if (cellState.hasBatter && !cellState.isMovedToPlate) {
-          const newCookingLevel = calculateCurrentCookingLevel(
-            cellState,
-            currentTime
-          );
+          const newCookingLevel = calculateCurrentCookingLevel(cellState, currentTime);
 
           if (cellState.cookingLevel !== newCookingLevel) {
             cellState.cookingLevel = newCookingLevel;
