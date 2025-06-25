@@ -25,6 +25,7 @@ export class AssetLoader {
     scene.load.image('start-background', 'assets/start-background.png');
     scene.load.image('background', 'assets/background.png');
     scene.load.image('button', 'assets/button.png');
+    scene.load.image('button-disabled', 'assets/button-disabled.png');
     scene.load.image('tent', 'assets/tent.png');
     scene.load.image('plate', 'assets/plate.png');
     scene.load.image('plate-cell', 'assets/plate-cell.png');

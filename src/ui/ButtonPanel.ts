@@ -9,6 +9,7 @@ export class ButtonPanel {
   private scene: Phaser.Scene;
   private toolButtonElements: Phaser.GameObjects.Image[] = [];
   private toolButtonImages: Phaser.GameObjects.Image[] = [];
+  private toolButtonData: { tool: Tool; label: string; image: string }[] = []; // 도구 데이터 저장
   private onServeCallback: (() => void) | null = null;
 
   /**
@@ -36,9 +37,8 @@ export class ButtonPanel {
 
     // 메인 도구들 생성 (첫 번째 줄)
     mainToolsData.forEach((toolData, buttonIndex) => {
-      // TODO: 선택됐을 때 표시
       const toolButton = this.scene.add
-        .image(startX + buttonIndex * 75, startY, 'button')
+        .image(startX + buttonIndex * 75, startY, 'button-disabled')
         .setScale(0.2)
         .setInteractive()
         .setDepth(6);
@@ -51,6 +51,7 @@ export class ButtonPanel {
 
       this.toolButtonElements.push(toolButton);
       this.toolButtonImages.push(toolButtonImage);
+      this.toolButtonData.push(toolData); // 도구 데이터 저장
 
       toolButton.on('pointerdown', () => {
         currentSelectedTool.current = toolData.tool;
@@ -59,21 +60,31 @@ export class ButtonPanel {
       });
     });
 
+    const serveData: { tool: Tool; label: string; image: string }[] = [
+      { tool: 'serve', label: '서빙', image: 'tool-serve' },
+      { tool: 'serve', label: '서빙', image: 'tool-serve' },
+    ];
+
     const serveButton = this.scene.add
-      .image(startX + 7 * 75, startY, 'button')
+      .image(startX + 7 * 75, startY, 'button-disabled')
       .setScale(0.2)
       .setInteractive()
       .setDepth(6);
 
-    this.scene.add
-      .image(startX + 7 * 75, startY, 'tool-serve')
+    const ServeButtonImage = this.scene.add
+      .image(startX + 7 * 75, startY, serveData[0].image)
       .setScale(0.05)
       .setOrigin(0.5)
       .setDepth(6);
 
+    this.toolButtonElements.push(serveButton);
+    this.toolButtonImages.push(ServeButtonImage);
+    this.toolButtonData.push(serveData[0]);
+
     serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
         this.onServeCallback();
+        this.updateAllButtonStyles();
         this.scene.sound.play('serve-sound');
       }
       console.log('서빙 버튼 클릭!');
@@ -101,6 +112,7 @@ export class ButtonPanel {
 
       this.toolButtonElements.push(toppingButton);
       this.toolButtonImages.push(toppingButtonImage);
+      this.toolButtonData.push(toppingData); // 토핑 데이터 저장
 
       toppingButton.on('pointerdown', () => {
         currentSelectedTool.current = toppingData.tool;
@@ -114,8 +126,24 @@ export class ButtonPanel {
 
   /**
    * 현재 선택된 도구에 따라 모든 버튼의 스타일을 업데이트합니다.
-   * 선택된 버튼은 검은색 두꺼운 테두리로 강조되고,
-   * 서빙 버튼은 별도의 고유 스타일을 유지합니다.
+   * 선택된 버튼은 활성화된 버튼 텍스처와 확대된 이미지로 강조되고,
+   * 선택되지 않은 버튼은 비활성화된 텍스처와 기본 크기 이미지를 사용합니다.
    */
-  private updateAllButtonStyles() {}
+  // TODO: 버튼 스타일 업데이트 로직 개선
+  private updateAllButtonStyles() {
+    this.toolButtonElements.forEach((button, index) => {
+      const currentTool = currentSelectedTool.current;
+      const buttonToolData = this.toolButtonData[index];
+      const isSelected = buttonToolData.tool === currentTool;
+
+      // 버튼 컨테이너 스타일 업데이트
+      if (isSelected) {
+        button.setTexture('button');
+        // this.toolButtonImages[index].setScale(0.06);
+      } else {
+        button.setTexture('button-disabled');
+        // this.toolButtonImages[index].setScale(0.05);
+      }
+    });
+  }
 }
