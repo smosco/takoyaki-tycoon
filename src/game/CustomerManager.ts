@@ -13,13 +13,18 @@ export class CustomerManager {
   private scene: Phaser.Scene;
   private platesManager: PlatesManager;
   private customerSprite: Phaser.GameObjects.Sprite | null = null;
+  // 손님 앞 서빙된 상자들 관리
+  private servedBoxes: Phaser.GameObjects.Image[] = [];
+  // TODO: 최대 상자 개수 설정
+  private readonly maxBoxesDisplay = 3; // 최대 3개 상자까지 표시
 
-  // UI 패널들
+  // 주문 말풍선
   private currentOrderBubble: {
     graphics: Phaser.GameObjects.Graphics;
     text: Phaser.GameObjects.Text;
   } | null = null;
 
+  // 남은 주문 패널
   private currentProductionPanel: {
     panel: Phaser.GameObjects.Graphics;
     text: Phaser.GameObjects.Text;
@@ -45,6 +50,149 @@ export class CustomerManager {
     // TODO: PlatesManager이 사용되지 않아 발생하는 빌드 에러 수정 필요
     console.log(this.platesManager);
     this.createCustomerArea();
+  }
+
+  // 타코야끼 상자 서빙 애니메이션
+  async animateBoxServing(): Promise<void> {
+    return new Promise((resolve) => {
+      const sourceX = 370; // PlatesManager 위치
+      const sourceY = 340;
+
+      // 손님 앞 테이블 위치
+      const tableX = 650;
+      const tableY = 430;
+
+      const boxTexture = 'takoyaki-box';
+
+      // 1. 날아갈 타코야끼 상자 생성
+      const flyingBox = this.scene.add
+        .image(sourceX, sourceY, boxTexture)
+        .setScale(0.08)
+        .setDepth(25);
+
+      // 2. 목표 위치 계산 (기존 상자들 옆에 배치)
+      const boxIndex = this.servedBoxes.length % this.maxBoxesDisplay;
+      const targetX = tableX - 20 + boxIndex * 25;
+      const targetY = tableY - 40;
+
+      // 3. 포물선 비행 애니메이션
+      this.animateBoxFlight(flyingBox, targetX, targetY, () => {
+        // 4. 도착 후 처리
+        flyingBox.destroy();
+
+        // 기존 상자가 최대 개수에 도달하면 가장 오래된 것 제거
+        if (this.servedBoxes.length >= this.maxBoxesDisplay) {
+          const oldestBox = this.servedBoxes.shift();
+          if (oldestBox) {
+            this.scene.tweens.add({
+              targets: oldestBox,
+              alpha: 0,
+              duration: 300,
+              onComplete: () => oldestBox.destroy(),
+            });
+          }
+        }
+
+        // 5. 새 상자를 테이블에 고정
+        const servedBox = this.scene.add
+          .image(targetX, targetY, boxTexture)
+          .setScale(0.12)
+          .setDepth(15)
+          .setAlpha(0);
+
+        this.servedBoxes.push(servedBox);
+
+        // 6. 상자 등장 애니메이션
+        this.scene.tweens.add({
+          targets: servedBox,
+          alpha: 1,
+          scaleX: 0.14,
+          scaleY: 0.14,
+          duration: 200,
+          ease: 'Back.easeOut',
+          onComplete: () => {
+            // 7. 원래 크기로 안정화
+            this.scene.tweens.add({
+              targets: servedBox,
+              scaleX: 0.12,
+              scaleY: 0.12,
+              duration: 150,
+              ease: 'Power2.easeOut',
+            });
+          },
+        });
+
+        resolve();
+      });
+    });
+  }
+
+  // 상자 비행 애니메이션 (포물선)
+  private animateBoxFlight(
+    flyingBox: Phaser.GameObjects.Image,
+    targetX: number,
+    targetY: number,
+    onComplete: () => void
+  ) {
+    const startX = flyingBox.x;
+    const startY = flyingBox.y;
+
+    const midX = (startX + targetX) / 2;
+    const midY = Math.min(startY, targetY) - 80; // 포물선 높이
+
+    // 베지어 곡선 경로
+    const curve = new Phaser.Curves.QuadraticBezier(
+      new Phaser.Math.Vector2(startX, startY),
+      new Phaser.Math.Vector2(midX, midY),
+      new Phaser.Math.Vector2(targetX, targetY)
+    );
+
+    // 경로를 따라 이동
+    this.scene.tweens.add({
+      targets: flyingBox,
+      duration: 1000,
+      ease: 'Power2.easeOut',
+      onUpdate: (tween) => {
+        const point = curve.getPoint(tween.progress);
+        flyingBox.x = point.x;
+        flyingBox.y = point.y;
+      },
+      onComplete: onComplete,
+    });
+
+    // 회전 효과 (상자가 날아가면서 회전)
+    this.scene.tweens.add({
+      targets: flyingBox,
+      rotation: Math.PI * 1.5, // 270도 회전
+      duration: 1000,
+      ease: 'Power2.easeOut',
+    });
+
+    // 크기 변화 (날아가면서 조금 작아짐)
+    this.scene.tweens.add({
+      targets: flyingBox,
+      scaleX: 0.08,
+      scaleY: 0.08,
+      duration: 1000,
+      ease: 'Power2.easeOut',
+    });
+  }
+
+  // 주문 완료 시 모든 상자 제거
+  clearServedBoxes() {
+    this.servedBoxes.forEach((box) => {
+      // 상자 사라짐 애니메이션
+      this.scene.tweens.add({
+        targets: box,
+        alpha: 0,
+        y: box.y - 30,
+        duration: 500,
+        ease: 'Power2.easeIn',
+        onComplete: () => box.destroy(),
+      });
+    });
+
+    this.servedBoxes = [];
   }
 
   private createCustomerArea() {
@@ -372,12 +520,6 @@ export class CustomerManager {
     }
   }
 
-  clearAllUI() {
-    this.clearOrderBubble();
-    this.clearProductionPanel();
-    this.clearMoodBubble(); // 기분 말풍선도 함께 정리
-  }
-
   // 타이머 정리 메서드 추가
   private cleanupTimers() {
     if (this.patienceUpdateTimer) {
@@ -434,6 +576,33 @@ export class CustomerManager {
         });
       }
     }
+  }
+
+  // 기존 clearAllUI
+  clearAllUI() {
+    this.clearOrderBubble();
+    this.clearProductionPanel();
+    this.clearMoodBubble();
+    this.clearServedBoxes(); // 상자들도 정리
+  }
+
+  // 성공적인 서빙 후 상자 반짝임 효과
+  celebrateSuccessfulServing() {
+    this.servedBoxes.forEach((box, index) => {
+      this.scene.time.delayedCall(index * 100, () => {
+        // 황금색 반짝임
+        this.scene.tweens.add({
+          targets: box,
+          tint: 0xffd700, // 황금색
+          duration: 200,
+          yoyo: true,
+          repeat: 2,
+          onComplete: () => {
+            box.clearTint();
+          },
+        });
+      });
+    });
   }
 
   // 메모리 누수 방지를 위한 destroy 메서드

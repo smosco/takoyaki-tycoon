@@ -5,6 +5,7 @@ import {
   startGame,
   updateGameTimer,
   serveToCustomer,
+  platesWithTakoyaki,
 } from '../state/gameState';
 import { ButtonPanel } from '../ui/ButtonPanel';
 import { TopUI } from '../ui/TopUI';
@@ -71,39 +72,99 @@ export class GameScene extends Phaser.Scene {
     this.startGameTimer();
   }
 
-  private handleServing() {
+  private async handleServing() {
     if (!gameFlow.isGameActive) {
       console.log('게임이 종료되어 서빙할 수 없습니다.');
       return;
     }
 
-    // 현재 손님의 기분을 가져와서 serveToCustomer에 전달
+    if (platesWithTakoyaki.length === 0) {
+      console.log('서빙할 타코야끼가 없습니다.');
+      return;
+    }
+
     const currentMood = this.customerManager.getCurrentMood();
     const result = serveToCustomer(currentMood);
 
     if (result.success && result.result) {
       console.log(result.message);
 
+      // 타코야끼 상자 날리기 애니메이션
+      await this.customerManager.animateBoxServing();
+
+      // 성공적인 서빙 축하 효과
+      if (result.result.correctCount > 0) {
+        this.customerManager.celebrateSuccessfulServing();
+        this.sound.play('serve-sound', { volume: 0.3 });
+      }
+
+      // UI 업데이트
       this.platesManager.updateDisplay();
       this.topUI.updateScore();
 
       if (result.orderCompleted) {
-        this.customerManager.clearAllUI();
+        // 주문 완료
+        this.showOrderCompletedEffect();
+
         this.time.delayedCall(2000, () => {
+          this.customerManager.clearAllUI(); // 상자들도 함께 정리됨
+
           if (gameFlow.isGameActive) {
-            // 새로운 손님이 등장할때 레벨 업데이트
             this.topUI.updateLevel();
             this.customerManager.spawnNewCustomer();
           }
         });
       } else {
+        // 부분 서빙 - 주문 패널만 업데이트
         if (currentCustomer.customer) {
           this.customerManager.updateProductionPanel(currentCustomer.customer.order);
         }
       }
     } else {
       console.log(result.message);
+      // 실패 시 효과음
+      // this.sound.play('serving-fail-sound', { volume: 0.2 });
     }
+  }
+
+  // 주문 완료 축하 효과
+  private showOrderCompletedEffect() {
+    const completeText = this.add
+      .text(400, 250, '주문 완료!', {
+        fontSize: '36px',
+        color: '#ff6b35',
+        fontStyle: 'bold',
+        stroke: '#ffffff',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(50)
+      .setAlpha(0);
+
+    // 텍스트 애니메이션
+    this.tweens.add({
+      targets: completeText,
+      alpha: 1,
+      scaleX: 1.2,
+      scaleY: 1.2,
+      y: 200,
+      duration: 600,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(1000, () => {
+          this.tweens.add({
+            targets: completeText,
+            alpha: 0,
+            y: 150,
+            duration: 400,
+            onComplete: () => completeText.destroy(),
+          });
+        });
+      },
+    });
+
+    // 완료 사운드
+    this.sound.play('serve-sound', { volume: 0.4 });
   }
 
   private startGameTimer() {
