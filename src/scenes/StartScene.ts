@@ -29,6 +29,7 @@ export class StartScene extends Phaser.Scene {
 
   private createBackground() {
     this.add.image(400, 300, 'start-background').setScale(0.6);
+    this.add.image(630, 430, 'customer_happy').setScale(0.7);
     // 배경 장식 - 떨어지는 벚꽃
     this.add.particles(0, 0, 'sakura', {
       x: { min: 0, max: this.scale.width },
@@ -48,24 +49,12 @@ export class StartScene extends Phaser.Scene {
   }
 
   private createTitle() {
-    // 메인 타이틀
-    const title = this.add
-      .text(400, 150, '타코야끼를 달라냥', {
-        fontSize: '56px',
-        fontStyle: 'bold',
-        color: '#fff',
-        fontFamily: 'Arial Black',
-        stroke: '#ff6b35',
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5)
-      .setName('title');
+    const title = this.add.image(400, 150, 'game-title').setScale(0.7);
 
     // 타이틀 애니메이션
     this.tweens.add({
       targets: title,
-      scaleX: 1.05,
-      scaleY: 1.05,
+      scale: 0.73,
       duration: 2000,
       yoyo: true,
       repeat: -1,
@@ -76,12 +65,11 @@ export class StartScene extends Phaser.Scene {
   private createButtons() {
     // 시작 버튼
     const startButton = this.add
-      .image(150, 380, 'game-start-button')
-      .setScale(0.45)
+      .image(150, 400, 'game-start-button')
+      .setScale(0.4)
       .setInteractive(); // Interactive 설정 추가
 
     startButton.on('pointerdown', () => {
-      console.log('게임 시작 버튼 클릭');
       this.startGame();
     });
 
@@ -90,8 +78,8 @@ export class StartScene extends Phaser.Scene {
       this.game.canvas.style.cursor = 'pointer';
       this.tweens.add({
         targets: startButton,
-        scale: 0.5,
-        duration: 100,
+        scale: 0.45,
+        duration: 200,
         ease: 'Sine.easeOut',
       });
     });
@@ -100,8 +88,8 @@ export class StartScene extends Phaser.Scene {
       this.game.canvas.style.cursor = 'default';
       this.tweens.add({
         targets: startButton,
-        scale: 0.45,
-        duration: 100,
+        scale: 0.4,
+        duration: 200,
         ease: 'Sine.easeOut',
       });
     });
@@ -109,12 +97,11 @@ export class StartScene extends Phaser.Scene {
     // 방법 버튼
     const howToButton = this.add
       .image(150, 490, 'game-manual-button')
-      .setScale(0.45)
+      .setScale(0.4)
       .setInteractive(); // Interactive 설정 추가
 
     // 올바른 이벤트 연결 (startButton이 아니라 howToButton)
     howToButton.on('pointerdown', () => {
-      console.log('게임 방법 버튼 클릭');
       this.showHowToPlay();
     });
 
@@ -123,8 +110,8 @@ export class StartScene extends Phaser.Scene {
       this.game.canvas.style.cursor = 'pointer';
       this.tweens.add({
         targets: howToButton,
-        scale: 0.5,
-        duration: 100,
+        scale: 0.45,
+        duration: 200,
         ease: 'Sine.easeOut',
       });
     });
@@ -133,8 +120,8 @@ export class StartScene extends Phaser.Scene {
       this.game.canvas.style.cursor = 'default';
       this.tweens.add({
         targets: howToButton,
-        scale: 0.45,
-        duration: 100,
+        scale: 0.4,
+        duration: 200,
         ease: 'Sine.easeOut',
       });
     });

@@ -51,8 +51,7 @@ export class GameScene extends Phaser.Scene {
       blendMode: 'NORMAL',
     });
 
-    // this.sound.play('japan-background', { volume: 0.5, loop: true });
-    this.sound.setVolume(0.2);
+    this.sound.play('japan-background', { volume: 0.5, loop: true });
   }
 
   private initializeManagers() {
