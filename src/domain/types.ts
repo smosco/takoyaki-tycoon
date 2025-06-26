@@ -18,22 +18,19 @@ export interface IronPanCellState {
 
 export type CustomerMood = 'happy' | 'neutral' | 'angry';
 
+export interface ToppingBreakdown {
+  negi: number;
+  katsuobushi: number;
+  nori: number;
+  none: number;
+}
+
 export interface CustomerOrder {
   totalQuantity: number;
   remainingQuantity: number;
   sauceRequired: true;
-  toppingBreakdown: {
-    negi: number;
-    katsuobushi: number;
-    nori: number;
-    none: number;
-  };
-  remainingToppingBreakdown: {
-    negi: number;
-    katsuobushi: number;
-    nori: number;
-    none: number;
-  };
+  toppingBreakdown: ToppingBreakdown;
+  remainingToppingBreakdown: ToppingBreakdown;
   preferredCookingLevel: 'perfect';
 }
 

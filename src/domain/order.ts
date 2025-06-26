@@ -1,4 +1,4 @@
-import type { CustomerOrder, TakoyakiOnPlate, CustomerMood } from './types';
+import type { CustomerOrder, TakoyakiOnPlate, CustomerMood, ToppingBreakdown } from './types';
 
 /**
  * 주문 완료 시 기분에 따른 보너스 점수를 계산합니다.
@@ -131,10 +131,7 @@ export function getLevelOrderConfig(level: number): {
  * @param totalQuantity - 총 타코야끼 개수
  * @param complexity - 토핑 복잡도 (0-1)
  */
-function distributeToppings(
-  totalQuantity: number,
-  complexity: number
-): CustomerOrder['toppingBreakdown'] {
+function distributeToppings(totalQuantity: number, complexity: number): ToppingBreakdown {
   const result = { negi: 0, katsuobushi: 0, nori: 0, none: 0 };
   const toppings = ['negi', 'katsuobushi', 'nori', 'none'] as const;
   let remaining = totalQuantity;
