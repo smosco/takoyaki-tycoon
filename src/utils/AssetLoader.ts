@@ -26,6 +26,8 @@ export class AssetLoader {
     scene.load.image('game-title', 'assets/game-title.png');
     scene.load.image('game-start-button', 'assets/game-start-button.png');
     scene.load.image('game-manual-button', 'assets/game-manual-button.png');
+    scene.load.image('manual-modal', 'assets/manual-modal.png');
+    scene.load.image('modal-close-button', 'assets/modal-close-button.png');
     scene.load.image('background', 'assets/background.png');
     scene.load.image('button', 'assets/button.png');
     scene.load.image('button-disabled', 'assets/button-disabled.png');

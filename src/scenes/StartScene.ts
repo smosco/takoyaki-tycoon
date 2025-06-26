@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { resetGameState } from '../state/gameState';
 import { AssetLoader } from '../utils/AssetLoader';
+import { howToPlayContent } from '../constants/howTolayContent';
 
 /**
  * 게임 시작 화면을 관리하는 씬
@@ -164,65 +165,41 @@ export class StartScene extends Phaser.Scene {
     const overlay = this.add.rectangle(0, 0, 800, 600, 0x000000, 0.7);
     overlay.setInteractive(); // 뒤쪽 클릭 방지
 
-    // 모달 박스
-    const modalBg = this.add.rectangle(0, 0, 600, 500, 0x2d2d2d).setStrokeStyle(3, 0xffd700);
+    // 모달 창
+    const modalBg = this.add.image(0, 0, 'manual-modal').setScale(0.8);
 
     // 제목
     const modalTitle = this.add
-      .text(0, -200, '게임 방법', {
-        fontSize: '28px',
-        color: '#ffd700',
+      .text(0, -185, '게임 방법', {
+        fontSize: '32px',
+        fontStyle: 'bold',
+        color: '#5A2101',
         fontFamily: 'Arial Bold',
       })
       .setOrigin(0.5);
 
-    // 내용
-    const content = [
-      '1. 🥣 반죽을 철판에 넣고 🐙 문어를 추가하세요',
-      '2. ⏰ 적절한 타이밍에 🥢 꼬챙이로 뒤집으세요',
-      '3. 🍽️ 완성된 타코야끼를 접시에 담으세요',
-      '4. 🥫 소스와 토핑(파, 가츠오부시, 김)을 추가하세요',
-      '5. 👥 손님 주문에 맞게 서빙하세요',
-      '',
-      '⭐ 점수 시스템:',
-      '• 정확한 타코야끼 1개당 100점',
-      '• 😊 손님이 행복하면 보너스 +50점/개',
-      '• 완벽한 익힘도와 정확한 토핑이 중요해요!',
-      '',
-      '⏱️ 제한시간: 3분',
-    ];
-
     const contentText = this.add
-      .text(0, 0, content.join('\n'), {
-        fontSize: '16px',
+      .text(0, 10, howToPlayContent.join('\n'), {
+        fontSize: '19px',
+        fontStyle: 'bold',
         color: '#ffffff',
         align: 'left',
-        lineSpacing: 8,
+        lineSpacing: 10,
       })
       .setOrigin(0.5);
 
     // 닫기 버튼
     const closeButton = this.add
-      .rectangle(0, 180, 120, 40, 0xff5722)
-      .setStrokeStyle(2, 0xd84315)
+      .image(140, 180, 'modal-close-button')
+      .setScale(0.6)
       .setInteractive();
-
-    const closeText = this.add
-      .text(0, 180, '닫기', {
-        fontSize: '18px',
-        color: '#fff',
-        fontFamily: 'Arial Bold',
-      })
-      .setOrigin(0.5);
 
     // 닫기 버튼 효과
     closeButton.on('pointerover', () => {
-      closeButton.setFillStyle(0xff7043);
       this.game.canvas.style.cursor = 'pointer';
     });
 
     closeButton.on('pointerout', () => {
-      closeButton.setFillStyle(0xff5722);
       this.game.canvas.style.cursor = 'default';
     });
 
@@ -231,7 +208,7 @@ export class StartScene extends Phaser.Scene {
     });
 
     // 모달에 모든 요소 추가
-    this.howToPlayModal.add([overlay, modalBg, modalTitle, contentText, closeButton, closeText]);
+    this.howToPlayModal.add([overlay, modalBg, modalTitle, contentText, closeButton]);
 
     // 모달 등장 애니메이션
     this.howToPlayModal.setScale(0);
