@@ -4,9 +4,9 @@ import {
   gameFlow,
   startGame,
   updateGameTimer,
-  serveToCustomer,
   platesWithTakoyaki,
 } from '../state/gameState';
+import { serveToCustomer } from '../services/customerService';
 import { ButtonPanel } from '../ui/ButtonPanel';
 import { TopUI } from '../ui/TopUI';
 import { IronPanManager } from '../game/IronPanManager';

@@ -43,3 +43,10 @@ export interface TakoyakiOnPlate {
   sauce: 'okonomiyaki' | null;
   topping: 'negi' | 'katsuobushi' | 'nori' | null;
 }
+
+export interface Customer {
+  id: string;
+  order: CustomerOrder;
+  isWaiting: boolean;
+  patience: number; // 0-100, 시간이 지나면 감소
+}
