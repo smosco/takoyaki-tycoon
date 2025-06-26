@@ -196,7 +196,7 @@ export class CustomerManager {
 
   private createTemporaryCustomer() {
     this.customerSprite = this.scene.add
-      .sprite(600, 300, 'customer_happy')
+      .sprite(600, 300, 'customer-happy')
       .setScale(0.6)
       .setDepth(1);
   }
@@ -209,7 +209,7 @@ export class CustomerManager {
     }
 
     this.customerSprite = this.scene.add
-      .sprite(900, 360, 'customer_happy')
+      .sprite(900, 360, 'customer-happy')
       .setScale(0.6)
       .setDepth(1);
 
@@ -496,17 +496,17 @@ export class CustomerManager {
     switch (mood) {
       case 'happy':
         console.log('Happy 상태로 변경 - 기본 텍스처, 틴트 제거');
-        this.customerSprite.setTexture('customer_happy');
+        this.customerSprite.setTexture('customer-happy');
         this.customerSprite.clearTint();
         break;
       case 'neutral':
         console.log('Neutral 상태로 변경 - neutral 텍스처, 노란 틴트');
-        this.customerSprite.setTexture('customer_neutral');
+        this.customerSprite.setTexture('customer-neutral');
         this.customerSprite.setTint(0xffffaa);
         break;
       case 'angry':
         console.log('Angry 상태로 변경 - angry 텍스처, 빨간 틴트');
-        this.customerSprite.setTexture('customer_angry');
+        this.customerSprite.setTexture('customer-angry');
         this.customerSprite.setTint(0xffaaaa);
         break;
     }

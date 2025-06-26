@@ -76,9 +76,9 @@ export class AssetLoader {
   }
 
   private static loadCustomerAssets(scene: Phaser.Scene) {
-    scene.load.image('customer_neutral', 'assets/customer-neutral.png');
-    scene.load.image('customer_happy', 'assets/customer-happy.png');
-    scene.load.image('customer_angry', 'assets/customer-angry.png');
+    scene.load.image('customer-neutral', 'assets/customer-neutral.png');
+    scene.load.image('customer-happy', 'assets/customer-happy.png');
+    scene.load.image('customer-angry', 'assets/customer-angry.png');
 
     scene.load.image('takoyaki-box', 'assets/takoyaki-box.png');
 

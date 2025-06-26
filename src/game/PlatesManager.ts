@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { platesWithTakoyaki, currentSelectedTool, gameFlow } from '../state/gameState';
-import { TextureHelper } from '../utiils/TextureHelper';
+import { TextureHelper } from '../utils/TextureHelper';
 
 export class PlatesManager {
   private scene: Phaser.Scene;

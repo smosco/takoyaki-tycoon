@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { resetGameState } from '../state/gameState';
-import { AssetLoader } from '../utiils/AssetLoader';
+import { AssetLoader } from '../utils/AssetLoader';
 
 /**
  * 게임 시작 화면을 관리하는 씬
@@ -29,7 +29,7 @@ export class StartScene extends Phaser.Scene {
 
   private createBackground() {
     this.add.image(400, 300, 'start-background').setScale(0.6);
-    this.add.image(630, 430, 'customer_happy').setScale(0.7);
+    this.add.image(630, 430, 'customer-happy').setScale(0.7);
     // 배경 장식 - 떨어지는 벚꽃
     this.add.particles(0, 0, 'sakura', {
       x: { min: 0, max: this.scale.width },

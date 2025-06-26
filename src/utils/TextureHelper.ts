@@ -1,4 +1,4 @@
-import { type IronPanCellState, type CookingLevel } from '../state/gameState';
+import type { IronPanCellState, CookingLevel } from '../domain/types';
 
 export class TextureHelper {
   /**
@@ -42,10 +42,7 @@ export class TextureHelper {
    * 레거시: 기존 셀 텍스처 방식 (호환성을 위해 유지)
    * @deprecated 새로운 레이어 시스템에서는 getBatterTexture 사용 권장
    */
-  static getCellTexture(
-    cellState: IronPanCellState,
-    cookingLevel: CookingLevel
-  ): string {
+  static getCellTexture(cellState: IronPanCellState, cookingLevel: CookingLevel): string {
     // 반죽이 없으면 빈 셀
     if (!cellState.hasBatter) {
       return 'plate-cell';
