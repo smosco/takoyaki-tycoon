@@ -25,7 +25,6 @@ export type Tool =
 
 export type Sauce = 'okonomiyaki';
 export type Topping = 'negi' | 'katsuobushi' | 'nori';
-export type CookingLevel = 'raw' | 'perfect' | 'burnt';
 
 export const ironPanCells: IronPanCellState[][] = [];
 export const platesWithTakoyaki: TakoyakiOnPlate[] = [];
