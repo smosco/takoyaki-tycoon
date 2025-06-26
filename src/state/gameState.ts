@@ -1,4 +1,4 @@
-import type { CustomerMood, TakoyakiOnPlate, IronPanCellState, Customer } from '../domain/types';
+import type { TakoyakiOnPlate, IronPanCellState, Customer } from '../domain/types';
 
 export type Tool =
   | 'batter'
@@ -52,13 +52,6 @@ export function isTopping(tool: Tool): tool is Topping {
 }
 
 // =====================================
-// 손님 시스템 함수들
-// =====================================
-
-// 기분 상태 캐시 (성능 최적화)
-const moodCache = new Map<number, { mood: CustomerMood; message: string }>();
-
-// =====================================
 // 게임 타이머 및 플로우 관리 함수들
 // =====================================
 
@@ -80,9 +73,6 @@ export function startGame(): void {
   gameStats.servedCustomers = 0;
   gameStats.happyCustomers = 0;
   gameStats.angryCustomers = 0;
-
-  // 캐시 초기화
-  moodCache.clear();
 
   console.log('게임 시작! 3분 타이머 가동');
 }
@@ -166,9 +156,6 @@ export function resetGameState(): void {
 
   // 접시 초기화
   platesWithTakoyaki.length = 0;
-
-  // 캐시 초기화
-  moodCache.clear();
 
   // 철판 초기화
   for (let row = 0; row < 3; row++) {
