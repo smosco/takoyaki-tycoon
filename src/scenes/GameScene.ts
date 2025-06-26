@@ -101,11 +101,15 @@ export class GameScene extends Phaser.Scene {
       this.topUI.updateScore();
 
       if (result.orderCompleted) {
-        // 주문 완료
         this.showOrderCompletedEffect();
 
+        // 보너스 조건: 주문 완료 + 손님 기분 happy일 때
+        if (result.result.mood === 'happy') {
+          this.showBonusEffect(result.result.bonusScore);
+        }
+
         this.time.delayedCall(2000, () => {
-          this.customerManager.clearAllUI(); // 상자들도 함께 정리됨
+          this.customerManager.clearAllUI();
 
           if (gameFlow.isGameActive) {
             this.topUI.updateLevel();
@@ -163,6 +167,72 @@ export class GameScene extends Phaser.Scene {
 
     // 완료 사운드
     this.sound.play('serve-sound', { volume: 0.4 });
+  }
+
+  private showBonusEffect(bonusScore: number) {
+    const centerX = 400;
+    const centerY = 300;
+
+    const bundle = this.add.image(centerX, centerY, 'money-bundle');
+    bundle.setScale(0.4).setDepth(100).setAlpha(0).setAngle(-10);
+
+    const bonusText = this.add.text(centerX, centerY + 60, `+${bonusScore}`, {
+      fontSize: '36px',
+      color: '#ffd700',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    bonusText.setOrigin(0.5);
+    bonusText.setDepth(100);
+    bonusText.setAlpha(0);
+
+    // this.sound.play('money-bonus-sound', { volume: 0.5 });
+
+    // 동시에 페이드 인
+    this.tweens.add({
+      targets: [bundle, bonusText],
+      alpha: 1,
+      duration: 200,
+      ease: 'Power1',
+    });
+
+    // 회전 + y값 이동 + 텍스트 올라가기
+    this.tweens.add({
+      targets: bundle,
+      angle: 720,
+      duration: 1800,
+      ease: 'Cubic.easeInOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: bundle,
+          alpha: 0,
+          y: bundle.y + 30,
+          duration: 400,
+          ease: 'Power1',
+          onComplete: () => {
+            bundle.destroy();
+          },
+        });
+      },
+    });
+
+    this.tweens.add({
+      targets: bonusText,
+      y: bonusText.y - 40,
+      duration: 1200,
+      ease: 'Sine.easeOut',
+    });
+
+    this.tweens.add({
+      targets: bonusText,
+      alpha: 0,
+      delay: 1000,
+      duration: 400,
+      onComplete: () => {
+        bonusText.destroy();
+      },
+    });
   }
 
   private startGameTimer() {

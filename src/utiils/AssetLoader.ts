@@ -83,6 +83,8 @@ export class AssetLoader {
 
     scene.load.image('takoyaki-box', 'assets/takoyaki-box.png');
 
+    scene.load.image('money-bundle', 'assets/money.png');
+
     // 실제 에셋 (준비되면 주석 해제)
     /*
     scene.load.spritesheet('customer_idle', 'assets/customer_idle.png', {
