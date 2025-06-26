@@ -76,42 +76,13 @@ export class AssetLoader {
   }
 
   private static loadCustomerAssets(scene: Phaser.Scene) {
-    // 임시 이미지
     scene.load.image('customer_neutral', 'assets/customer-neutral.png');
     scene.load.image('customer_happy', 'assets/customer-happy.png');
     scene.load.image('customer_angry', 'assets/customer-angry.png');
 
     scene.load.image('takoyaki-box', 'assets/takoyaki-box.png');
 
-    scene.load.image('money-bundle', 'assets/money.png');
-
-    // 실제 에셋 (준비되면 주석 해제)
-    /*
-    scene.load.spritesheet('customer_idle', 'assets/customer_idle.png', {
-      frameWidth: 64,
-      frameHeight: 96
-    });
-
-    scene.load.spritesheet('customer_walk', 'assets/customer_walk.png', {
-      frameWidth: 64,
-      frameHeight: 96
-    });
-
-    scene.load.spritesheet('customer_talk', 'assets/customer_talk.png', {
-      frameWidth: 64,
-      frameHeight: 96
-    });
-
-    scene.load.spritesheet('customer_happy', 'assets/customer_happy.png', {
-      frameWidth: 64,
-      frameHeight: 96
-    });
-
-    scene.load.spritesheet('customer_angry', 'assets/customer_angry.png', {
-      frameWidth: 64,
-      frameHeight: 96
-    });
-    */
+    scene.load.image('money-bundle', 'assets/money-bundle.png');
   }
 
   private static loadAudioAssets(scene: Phaser.Scene) {

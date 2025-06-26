@@ -3,11 +3,11 @@ import {
   ironPanCells,
   currentSelectedTool,
   platesWithTakoyaki,
-  calculateCurrentCookingLevel,
   gameFlow,
-  type IronPanCellState,
 } from '../state/gameState';
+import type { IronPanCellState } from '../domain/types';
 import { TextureHelper } from '../utiils/TextureHelper';
+import { calculateCurrentCookingLevel } from '../domain/cooking';
 
 // 각 셀의 레이어들을 관리하는 인터페이스
 interface CellLayers {

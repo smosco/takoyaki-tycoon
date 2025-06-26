@@ -1,12 +1,7 @@
 import Phaser from 'phaser';
-import {
-  currentCustomer,
-  spawnNewCustomer,
-  gameStats,
-  gameFlow,
-  getCustomerMoodByPatience,
-  type CustomerOrder,
-} from '../state/gameState';
+import { getCustomerMoodByPatience } from '../domain/mood';
+import type { CustomerOrder } from '../domain/types';
+import { currentCustomer, spawnNewCustomer, gameStats, gameFlow } from '../state/gameState';
 import { PlatesManager } from './PlatesManager';
 
 export class CustomerManager {
