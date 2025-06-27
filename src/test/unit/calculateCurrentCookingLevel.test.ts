@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateCurrentCookingLevel, TAKOYAKI_COOKING_TIMES } from '../domain/cooking';
-import type { IronPanCellState } from '../domain/types';
+import { calculateCurrentCookingLevel, TAKOYAKI_COOKING_TIMES } from '../../domain/cooking';
+import type { IronPanCellState } from '../../domain/types';
 
 describe('calculateCurrentCookingLevel', () => {
   const baseTime = 1000; // 기준 시간
