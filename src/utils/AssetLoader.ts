@@ -98,5 +98,6 @@ export class AssetLoader {
     scene.load.audio('topping-sound', 'assets/audio/topping-sound.mp3');
     scene.load.audio('serve-sound', 'assets/audio/serve-sound.mp3');
     scene.load.audio('stick-sound', 'assets/audio/stick-sound.mp3');
+    scene.load.audio('bonus-sound', 'assets/audio/bonus-sound.mp3');
   }
 }

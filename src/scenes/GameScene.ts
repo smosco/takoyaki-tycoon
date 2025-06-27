@@ -187,7 +187,7 @@ export class GameScene extends Phaser.Scene {
     bonusText.setDepth(100);
     bonusText.setAlpha(0);
 
-    // this.sound.play('money-bonus-sound', { volume: 0.5 });
+    this.sound.play('bonus-sound', { volume: 0.5 });
 
     // 동시에 페이드 인
     this.tweens.add({
