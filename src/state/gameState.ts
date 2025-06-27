@@ -25,6 +25,7 @@ export const gameStats = {
   servedCustomers: 0,
   happyCustomers: 0,
   angryCustomers: 0,
+  happyBonus: 0,
 };
 
 // 게임 타이머 및 상태 관리
@@ -73,6 +74,7 @@ export function startGame(): void {
   gameStats.servedCustomers = 0;
   gameStats.happyCustomers = 0;
   gameStats.angryCustomers = 0;
+  gameStats.happyBonus = 0;
 
   console.log('게임 시작! 3분 타이머 가동');
 }
@@ -150,6 +152,7 @@ export function resetGameState(): void {
   gameStats.servedCustomers = 0;
   gameStats.happyCustomers = 0;
   gameStats.angryCustomers = 0;
+  gameStats.happyBonus = 0;
 
   // 손님 초기화
   currentCustomer.customer = null;

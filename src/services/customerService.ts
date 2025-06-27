@@ -67,7 +67,10 @@ export function serveToCustomer(customerMood?: 'happy' | 'neutral' | 'angry') {
     gameLevel.value += 1;
     // 통계 업데이트
     gameStats.servedCustomers++;
-    if (result.mood === 'happy') gameStats.happyCustomers++;
+    if (result.mood === 'happy') {
+      gameStats.happyCustomers++;
+      gameStats.happyBonus += result.bonusScore;
+    }
     if (result.mood === 'angry') gameStats.angryCustomers++;
     currentCustomer.customer = null;
 
