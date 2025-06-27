@@ -17,6 +17,7 @@ export function calculateCurrentCookingLevel(
   cellState: IronPanCellState,
   currentTime: number
 ): CookingLevel {
+  // 반죽이 없거나, 요리 시작 시간이 없는 경우 무조건 raw를 반환
   if (!cellState.hasBatter || !cellState.cookingStartTime) {
     return 'raw';
   }
