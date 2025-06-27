@@ -99,5 +99,6 @@ export class AssetLoader {
     scene.load.audio('serve-sound', 'assets/audio/serve-sound.mp3');
     scene.load.audio('stick-sound', 'assets/audio/stick-sound.mp3');
     scene.load.audio('bonus-sound', 'assets/audio/bonus-sound.mp3');
+    scene.load.audio('game-over', 'assets/audio/game-over5.mp3');
   }
 }

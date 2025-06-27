@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { gameScore, gameStats, resetGameState } from '../state/gameState';
-// import { AssetLoader } from '../utils/AssetLoader';
+import { AssetLoader } from '../utils/AssetLoader';
 
 /**
  * 게임 종료 화면을 관리하는 씬
@@ -11,9 +11,9 @@ export class EndScene extends Phaser.Scene {
     super('EndScene');
   }
 
-  // preload() {
-  //   AssetLoader.loadAllAssets(this);
-  // }
+  preload() {
+    AssetLoader.loadAllAssets(this);
+  }
 
   /**
    * 게임 종료 화면 UI를 생성합니다.
@@ -22,110 +22,153 @@ export class EndScene extends Phaser.Scene {
   create() {
     // 배경
     this.add.image(400, 300, 'start-background').setScale(0.9);
-    this.add.image(400, 300, 'receipt').setScale(1.2);
+    this.sound.play('game-over', { volume: 0.5 });
 
-    // 게임 오버 제목
-    this.add
+    const receipt = this.add.image(400, 300, 'receipt').setScale(1.2);
+    let fx;
+
+    if (receipt.preFX) {
+      fx = receipt.preFX.addReveal(0.1, 0, 1);
+      this.tweens.add({
+        targets: fx,
+        progress: 1,
+        duration: 1000,
+      });
+    }
+
+    // 순차 등장 처리 (타임라인 대체)
+    const gameOverText = this.add
       .text(400, 120, 'GAME OVER', {
         fontSize: '42px',
         color: '#5A2101',
         fontStyle: 'bold',
         fontFamily: 'Arial Black',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0);
 
-    // 점수
-    this.add
+    const scoreText = this.add
       .text(400, 200, `최종 점수: ${gameScore.value}점`, {
         fontSize: '32px',
         color: '#7c5200',
         fontStyle: 'bold',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0);
 
-    // 기분 좋은 손님 보너스
-    this.add
+    const bonusText = this.add
       .text(400, 260, `보너스: ${gameStats.happyBonus}점 😊`, {
         fontSize: '24px',
         color: '#7c5200',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0);
 
-    // 평가
     const rating = this.calculateRating();
-    this.add
+    const ratingText = this.add
       .text(400, 350, rating.text, {
         fontSize: '24px',
         color: '#5A2101',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setAlpha(0);
 
-    // 버튼들
-    this.createButtons();
+    const restartButton = this.add
+      .image(320, 470, 'retry-button')
+      .setScale(0.35)
+      .setInteractive()
+      .setAlpha(0);
+    const menuButton = this.add
+      .image(480, 470, 'menu-button')
+      .setScale(0.35)
+      .setInteractive()
+      .setAlpha(0);
 
-    // 폭죽 애니메이션 (높은 점수일 때)
+    // 순차적으로 페이드인
+    this.tweens.add({
+      targets: gameOverText,
+      alpha: 1,
+      duration: 300,
+      delay: 0,
+      onComplete: () => {
+        this.tweens.add({
+          targets: scoreText,
+          alpha: 1,
+          duration: 300,
+          delay: 100,
+          onComplete: () => {
+            this.tweens.add({
+              targets: bonusText,
+              alpha: 1,
+              duration: 300,
+              delay: 100,
+              onComplete: () => {
+                this.tweens.add({
+                  targets: ratingText,
+                  alpha: 1,
+                  duration: 300,
+                  delay: 100,
+                  onComplete: () => {
+                    this.tweens.add({
+                      targets: [restartButton, menuButton],
+                      alpha: 1,
+                      duration: 300,
+                      delay: 100,
+                    });
+                  },
+                });
+              },
+            });
+          },
+        });
+      },
+    });
+
+    // 버튼 호버 효과와 이벤트 설정
+    this.setupButtonEvents(restartButton, menuButton);
+
+    // 점수 1000 이상이면 축하 효과는 마지막에 정적으로 한번만
     if (gameScore.value >= 1000) {
-      this.createCelebrationEffect();
+      this.time.delayedCall(1600, () => {
+        this.createCelebrationEffect();
+      });
     }
   }
 
   /**
    * 재시작 및 메인 메뉴 버튼을 생성합니다.
    */
-  private createButtons() {
-    // 다시 하기 버튼
-    const restartButton = this.add.image(320, 470, 'retry-button').setScale(0.35).setInteractive();
+  private setupButtonEvents(
+    restartButton: Phaser.GameObjects.Image,
+    menuButton: Phaser.GameObjects.Image
+  ) {
+    const scaleIn = (btn: Phaser.GameObjects.Image) =>
+      this.tweens.add({ targets: btn, scale: 0.38, duration: 200, ease: 'Sine.easeOut' });
 
-    // 메인 메뉴 버튼
-    const menuButton = this.add.image(480, 470, 'menu-button').setScale(0.35).setInteractive();
+    const scaleOut = (btn: Phaser.GameObjects.Image) =>
+      this.tweens.add({ targets: btn, scale: 0.35, duration: 200, ease: 'Sine.easeOut' });
 
-    // 버튼 호버 효과
     restartButton.on('pointerover', () => {
       this.game.canvas.style.cursor = 'pointer';
-      this.tweens.add({
-        targets: restartButton,
-        scale: 0.38,
-        duration: 200,
-        ease: 'Sine.easeOut',
-      });
+      scaleIn(restartButton);
     });
-
     restartButton.on('pointerout', () => {
       this.game.canvas.style.cursor = 'default';
-      this.tweens.add({
-        targets: restartButton,
-        scale: 0.35,
-        duration: 200,
-        ease: 'Sine.easeOut',
-      });
+      scaleOut(restartButton);
     });
-
-    menuButton.on('pointerover', () => {
-      this.game.canvas.style.cursor = 'pointer';
-      this.tweens.add({
-        targets: menuButton,
-        scale: 0.38,
-        duration: 200,
-        ease: 'Sine.easeOut',
-      });
-    });
-
-    menuButton.on('pointerout', () => {
-      this.game.canvas.style.cursor = 'default';
-      this.tweens.add({
-        targets: menuButton,
-        scale: 0.35,
-        duration: 200,
-        ease: 'Sine.easeOut',
-      });
-    });
-
-    // 버튼 클릭 이벤트
     restartButton.on('pointerdown', () => {
       resetGameState();
       this.scene.start('GameScene');
     });
 
+    menuButton.on('pointerover', () => {
+      this.game.canvas.style.cursor = 'pointer';
+      scaleIn(menuButton);
+    });
+    menuButton.on('pointerout', () => {
+      this.game.canvas.style.cursor = 'default';
+      scaleOut(menuButton);
+    });
     menuButton.on('pointerdown', () => {
       resetGameState();
       this.scene.start('StartScene');
