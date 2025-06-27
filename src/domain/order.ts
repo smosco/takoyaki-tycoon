@@ -66,6 +66,8 @@ export function compareOrderWithServedTakoyaki(
       continue;
     }
 
+    // 실질적으로 익힘 이슈는 생길 수 없음
+    // 왜냐! 꼬챙이가 익힘이 perfect일때만 접시로 이동시키기 때문
     if (takoyaki.cookingLevel !== 'perfect') {
       breakdown.cookingIssues++;
       continue;
@@ -164,9 +166,7 @@ export function generateRandomOrder(level: number): CustomerOrder {
   return {
     totalQuantity,
     remainingQuantity: totalQuantity,
-    sauceRequired: true,
     toppingBreakdown,
     remainingToppingBreakdown: { ...toppingBreakdown },
-    preferredCookingLevel: 'perfect',
   };
 }

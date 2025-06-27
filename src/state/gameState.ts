@@ -10,7 +10,6 @@ export type Tool =
   | 'nori'
   | 'serve';
 
-export type Sauce = 'okonomiyaki';
 export type Topping = 'negi' | 'katsuobushi' | 'nori';
 
 export const ironPanCells: IronPanCellState[][] = [];

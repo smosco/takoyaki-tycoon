@@ -77,7 +77,7 @@ export class PlatesManager {
 
   private addSauce(takoyaki: any, plateIndex: number) {
     if (!takoyaki.sauce) {
-      takoyaki.sauce = 'okonomiyaki';
+      takoyaki.sauce = true;
       this.scene.sound.play('sauce-sound');
       this.updateDisplay();
       console.log(`접시[${plateIndex}] 소스 추가`);

@@ -271,7 +271,7 @@ export class IronPanManager {
   private moveToPlate(cellState: IronPanCellState, row: number, col: number) {
     if (platesWithTakoyaki.length < 10) {
       platesWithTakoyaki.push({
-        sauce: null,
+        sauce: false,
         topping: null,
         cookingLevel: 'perfect',
       });
