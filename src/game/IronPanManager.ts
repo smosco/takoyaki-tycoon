@@ -230,18 +230,20 @@ export class IronPanManager {
   }
 
   private flipTakoyaki(cellState: IronPanCellState, row: number, col: number) {
-    if (!cellState.isFlipped) {
-      cellState.isFlipped = true;
+    const layers = this.cellLayers[row][col];
 
-      const layers = this.cellLayers[row][col];
+    // 뒤집기 애니메이션 (content 레이어만 사용)
+    this.animateFlip(layers.content, () => {
+      // 처음 뒤집을 때
+      if (!cellState.isFlipped) {
+        cellState.isFlipped = true;
 
-      // 뒤집기 애니메이션 (content 레이어만 사용)
-      this.animateFlip(layers.content, () => {
         // 애니메이션 완료 후 텍스처 업데이트
         this.updateContentTexture(row, col);
-        console.log(`[${row},${col}] 뒤집기 완료`);
-      });
-    }
+      }
+
+      console.log(`[${row},${col}] 뒤집기 완료`);
+    });
   }
 
   private animateFlip(contentLayer: Phaser.GameObjects.Image, onComplete?: () => void) {
