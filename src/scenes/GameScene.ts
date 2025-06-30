@@ -108,6 +108,11 @@ export class GameScene extends Phaser.Scene {
           this.showBonusEffect(result.result.bonusScore);
         }
 
+        // 감점 : 주문 완료 + 손님 기분 angry일 때
+        if (result.result.mood === 'angry') {
+          this.showPenaltyEffect(result.result.bonusScore);
+        }
+
         this.time.delayedCall(2000, () => {
           this.customerManager.clearAllUI();
 
@@ -233,6 +238,60 @@ export class GameScene extends Phaser.Scene {
         bonusText.destroy();
       },
     });
+  }
+
+  private showPenaltyEffect(penaltyScore: number) {
+    const centerX = 400;
+    const centerY = 300;
+
+    // 코인 이미지 생성
+    const coin = this.add.image(centerX, centerY, 'money-bundle');
+    coin.setScale(0.4).setDepth(100).setAlpha(1);
+
+    this.tweens.add({
+      targets: coin,
+      x: centerX - 150,
+      y: centerY - 100,
+      scale: 0,
+      alpha: 0,
+      duration: 600,
+      ease: 'Back.easeIn',
+      onComplete: () => coin.destroy(),
+    });
+
+    // 감점 텍스트
+    const text = this.add
+      .text(centerX, centerY - 40, `-${penaltyScore}`, {
+        fontSize: '42px',
+        color: '#ff3333',
+        fontStyle: 'bold',
+        stroke: '#000',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(101)
+      .setAlpha(0);
+
+    // 텍스트 깜박 + 위로 사라짐
+    this.tweens.add({
+      targets: text,
+      alpha: 1,
+      scale: { from: 1.2, to: 0.8 },
+      y: centerY - 80,
+      duration: 600,
+      ease: 'Cubic.easeOut',
+      yoyo: true,
+      onComplete: () => {
+        this.tweens.add({
+          targets: text,
+          alpha: 0,
+          duration: 300,
+          onComplete: () => text.destroy(),
+        });
+      },
+    });
+
+    // this.sound.play('coin-steal-sound', { volume: 0.6 });
   }
 
   private startGameTimer() {

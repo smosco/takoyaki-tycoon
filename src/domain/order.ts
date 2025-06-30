@@ -12,6 +12,8 @@ export function calculateCompletionBonus(mood: CustomerMood, totalCount: number)
   switch (mood) {
     case 'happy':
       return totalCount * bonusPerItem;
+    case 'angry':
+      return -totalCount * bonusPerItem;
     default:
       return 0;
   }
