@@ -69,6 +69,12 @@ export class IronPanManager {
         // 컨테이너에 레이어들 추가
         container.add([background, content]);
 
+        container.on('pointerover', () => {
+          this.scene.game.canvas.style.cursor = 'pointer';
+        });
+        container.on('pointerout', () => {
+          this.scene.game.canvas.style.cursor = 'default';
+        });
         // 클릭 이벤트
         container.on('pointerdown', () => this.handleCellClick(row, col));
 

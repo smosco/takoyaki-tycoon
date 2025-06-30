@@ -53,6 +53,12 @@ export class ButtonPanel {
       this.toolButtonImages.push(toolButtonImage);
       this.toolButtonData.push(toolData); // 도구 데이터 저장
 
+      toolButton.on('pointerover', () => {
+        this.scene.game.canvas.style.cursor = 'pointer';
+      });
+      toolButton.on('pointerout', () => {
+        this.scene.game.canvas.style.cursor = 'default';
+      });
       toolButton.on('pointerdown', () => {
         currentSelectedTool.current = toolData.tool;
         this.updateAllButtonStyles();
@@ -80,6 +86,12 @@ export class ButtonPanel {
     this.toolButtonImages.push(ServeButtonImage);
     this.toolButtonData.push(serveData[0]);
 
+    serveButton.on('pointerover', () => {
+      this.scene.game.canvas.style.cursor = 'pointer';
+    });
+    serveButton.on('pointerout', () => {
+      this.scene.game.canvas.style.cursor = 'default';
+    });
     serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
         currentSelectedTool.current = serveData[0].tool;
@@ -114,6 +126,12 @@ export class ButtonPanel {
       this.toolButtonImages.push(toppingButtonImage);
       this.toolButtonData.push(toppingData); // 토핑 데이터 저장
 
+      toppingButton.on('pointerover', () => {
+        this.scene.game.canvas.style.cursor = 'pointer';
+      });
+      toppingButton.on('pointerout', () => {
+        this.scene.game.canvas.style.cursor = 'default';
+      });
       toppingButton.on('pointerdown', () => {
         currentSelectedTool.current = toppingData.tool;
         this.updateAllButtonStyles();

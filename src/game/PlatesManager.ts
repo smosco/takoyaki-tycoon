@@ -50,6 +50,12 @@ export class PlatesManager {
       this.plateVisualElements.push(plateVisualElement);
       this.plateTextElements.push(plateTextElement);
 
+      plateVisualElement.on('pointerover', () => {
+        this.scene.game.canvas.style.cursor = 'pointer';
+      });
+      plateVisualElement.on('pointerout', () => {
+        this.scene.game.canvas.style.cursor = 'default';
+      });
       plateVisualElement.on('pointerdown', () => this.handlePlateClick(plateIndex));
     }
   }
