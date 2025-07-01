@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { resetGameState } from '../state/gameState';
 import { AssetLoader } from '../utils/AssetLoader';
 import { howToPlayContent } from '../constants/howTolayContent';
+import { setCursorPointer } from '../utils/CursorUtils';
 
 /**
  * 게임 시작 화면을 관리하는 씬
@@ -68,15 +69,17 @@ export class StartScene extends Phaser.Scene {
     const startButton = this.add
       .image(150, 400, 'game-start-button')
       .setScale(0.8)
-      .setInteractive(); // Interactive 설정 추가
+      .setInteractive();
 
     startButton.on('pointerdown', () => {
       this.startGame();
     });
 
-    // 호버 효과 추가
+    // 커서 포인터 효과 적용
+    setCursorPointer(startButton, this);
+
+    // 호버 효과
     startButton.on('pointerover', () => {
-      this.game.canvas.style.cursor = 'pointer';
       this.tweens.add({
         targets: startButton,
         scale: 0.85,
@@ -86,7 +89,6 @@ export class StartScene extends Phaser.Scene {
     });
 
     startButton.on('pointerout', () => {
-      this.game.canvas.style.cursor = 'default';
       this.tweens.add({
         targets: startButton,
         scale: 0.8,
@@ -99,16 +101,17 @@ export class StartScene extends Phaser.Scene {
     const howToButton = this.add
       .image(150, 490, 'game-manual-button')
       .setScale(0.8)
-      .setInteractive(); // Interactive 설정 추가
+      .setInteractive();
 
-    // 올바른 이벤트 연결 (startButton이 아니라 howToButton)
     howToButton.on('pointerdown', () => {
       this.showHowToPlay();
     });
 
-    // 호버 효과 추가
+    // 커서 포인터 효과 적용
+    setCursorPointer(howToButton, this);
+
+    // 호버 효과
     howToButton.on('pointerover', () => {
-      this.game.canvas.style.cursor = 'pointer';
       this.tweens.add({
         targets: howToButton,
         scale: 0.85,
@@ -118,7 +121,6 @@ export class StartScene extends Phaser.Scene {
     });
 
     howToButton.on('pointerout', () => {
-      this.game.canvas.style.cursor = 'default';
       this.tweens.add({
         targets: howToButton,
         scale: 0.8,
@@ -144,10 +146,7 @@ export class StartScene extends Phaser.Scene {
   }
 
   private startGame() {
-    // 시작 효과음
-    // this.sound.play('start');
-
-    resetGameState(); // 게임 상태 초기화
+    resetGameState();
 
     // 페이드 아웃 효과와 함께 게임 시작
     this.cameras.main.fadeOut(300, 0, 0, 0);
@@ -157,61 +156,114 @@ export class StartScene extends Phaser.Scene {
   }
 
   private showHowToPlay() {
-    if (this.howToPlayModal) return; // 이미 열려있으면 무시
+    if (this.howToPlayModal) return;
 
-    this.howToPlayModal = this.add.container(400, 300);
+    // 오버레이
+    const overlay = this.add
+      .rectangle(400, 300, 800, 600, 0x000000)
+      .setInteractive()
+      .setDepth(10)
+      .setAlpha(0); // 투명하게 시작
 
-    // 모달 배경 (반투명)
-    const overlay = this.add.rectangle(0, 0, 800, 600, 0x000000, 0.7);
-    overlay.setInteractive(); // 뒤쪽 클릭 방지
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0.5,
+      duration: 200,
+      ease: 'Power2',
+    });
 
-    // 모달 창
-    const modalBg = this.add.image(0, 0, 'manual-modal').setScale(0.8);
+    // ESC나 클릭 시 닫기
+    overlay.on('pointerdown', () => {
+      this.closeHowToPlay();
+    });
 
-    // 제목
+    // 방법 모달
+    this.howToPlayModal = this.add.container(400, 300).setDepth(1001);
+
+    // 모달 크기 설정
+    const modalWidth = 480;
+    const modalHeight = 480;
+    const padding = 30;
+
+    // 9-slice 모달 배경
+    const modalBg = this.add
+      .nineslice(
+        0,
+        0, // x, y
+        'manual-modal', // texture key
+        undefined,
+        modalWidth, // width
+        modalHeight, // height
+        64,
+        64,
+        64,
+        64
+      )
+      .setOrigin(0.5);
+
+    // 모달 제목
     const modalTitle = this.add
-      .text(0, -185, '게임 방법', {
+      .text(0, -modalHeight / 2 + 55, '게임 방법', {
         fontSize: '32px',
         fontStyle: 'bold',
         color: '#5A2101',
-        fontFamily: 'Arial Bold',
+        fontFamily: 'Arial',
       })
       .setOrigin(0.5);
+
+    // 콘텐츠 영역
+    const contentY = -modalHeight / 2 + 100;
 
     const contentText = this.add
-      .text(0, 10, howToPlayContent.join('\n'), {
-        fontSize: '19px',
-        fontStyle: 'bold',
+      .text(0, contentY, howToPlayContent.join('\n'), {
+        fontSize: '20px',
+        fontStyle: 'normal',
         color: '#ffffff',
         align: 'left',
-        lineSpacing: 10,
+        lineSpacing: 8,
+        wordWrap: {
+          width: modalWidth - padding * 2,
+          useAdvancedWrap: true,
+        },
       })
+      .setOrigin(0.5, 0);
+
+    // 닫기 버튼 (하단 중앙)
+    const closeButton = this.add
+      .image(modalWidth / 2 - 90, modalHeight / 2 - 55, 'modal-close-button')
+      .setScale(0.6)
+      .setInteractive()
       .setOrigin(0.5);
 
-    // 닫기 버튼
-    const closeButton = this.add
-      .image(140, 180, 'modal-close-button')
-      .setScale(0.6)
-      .setInteractive();
-
-    // 닫기 버튼 효과
-    closeButton.on('pointerover', () => {
-      this.game.canvas.style.cursor = 'pointer';
-    });
-
-    closeButton.on('pointerout', () => {
-      this.game.canvas.style.cursor = 'default';
-    });
+    setCursorPointer(closeButton, this);
 
     closeButton.on('pointerdown', () => {
       this.closeHowToPlay();
     });
 
-    // 모달에 모든 요소 추가
-    this.howToPlayModal.add([overlay, modalBg, modalTitle, contentText, closeButton]);
+    closeButton.on('pointerover', () => {
+      this.tweens.add({
+        targets: closeButton,
+        scale: 0.65,
+        duration: 200,
+        ease: 'Power2.easeOut',
+      });
+    });
 
-    // 모달 등장 애니메이션
-    this.howToPlayModal.setScale(0);
+    closeButton.on('pointerout', () => {
+      this.tweens.add({
+        targets: closeButton,
+        scale: 0.6,
+        duration: 200,
+        ease: 'Power2.easeOut',
+      });
+    });
+
+    // 컨테이너에 추가
+    this.howToPlayModal.add([modalBg, modalTitle, contentText, closeButton]);
+
+    // 세련된 등장 애니메이션
+    this.howToPlayModal.setScale(0.8);
     this.howToPlayModal.setAlpha(0);
 
     this.tweens.add({
@@ -219,12 +271,20 @@ export class StartScene extends Phaser.Scene {
       scaleX: 1,
       scaleY: 1,
       alpha: 1,
-      duration: 400,
-      ease: 'Back.easeOut',
+      duration: 350,
+      ease: 'Power3.easeOut',
     });
+
+    // 닫을 때 오버레이도 같이 제거하도록 기억
+    this.howToPlayModal.setData('overlay', overlay); // 모달에 연결
 
     // ESC 키로 닫기
     this.input.keyboard?.once('keydown-ESC', () => {
+      this.closeHowToPlay();
+    });
+
+    // 오버레이 클릭으로 닫기
+    overlay.on('pointerdown', () => {
       this.closeHowToPlay();
     });
   }
@@ -232,18 +292,31 @@ export class StartScene extends Phaser.Scene {
   private closeHowToPlay() {
     if (!this.howToPlayModal) return;
 
-    // 모달 사라짐 애니메이션
+    const overlay = this.howToPlayModal.getData('overlay') as
+      | Phaser.GameObjects.Rectangle
+      | undefined;
+
     this.tweens.add({
       targets: this.howToPlayModal,
-      scaleX: 0,
-      scaleY: 0,
+      scaleX: 0.8,
+      scaleY: 0.8,
       alpha: 0,
-      duration: 300,
-      ease: 'Back.easeIn',
+      duration: 250,
+      ease: 'Power2.easeIn',
       onComplete: () => {
         this.howToPlayModal?.destroy();
         this.howToPlayModal = null;
       },
     });
+
+    if (overlay) {
+      this.tweens.add({
+        targets: overlay,
+        alpha: 0,
+        duration: 200,
+        ease: 'Power1',
+        onComplete: () => overlay.destroy(),
+      });
+    }
   }
 }
