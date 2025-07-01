@@ -36,7 +36,7 @@ export class EndScene extends Phaser.Scene {
       });
     }
 
-    // 순차 등장 처리 (타임라인 대체)
+    // UI 요소들 생성 (초기 상태는 alpha: 0)
     const gameOverText = this.add
       .text(400, 120, 'GAME OVER', {
         fontSize: '42px',
@@ -78,58 +78,65 @@ export class EndScene extends Phaser.Scene {
       .setScale(0.35)
       .setInteractive()
       .setAlpha(0);
+
     const menuButton = this.add
       .image(480, 470, 'menu-button')
       .setScale(0.35)
       .setInteractive()
       .setAlpha(0);
 
-    // 순차적으로 페이드인
-    this.tweens.add({
-      targets: gameOverText,
-      alpha: 1,
-      duration: 300,
-      delay: 0,
-      onComplete: () => {
-        this.tweens.add({
+    // Timeline을 사용한 순차 페이드인
+    const timeline = this.add.timeline([
+      {
+        at: 0,
+        tween: {
+          targets: gameOverText,
+          alpha: 1,
+          duration: 300,
+        },
+      },
+      {
+        at: 400,
+        tween: {
           targets: scoreText,
           alpha: 1,
           duration: 300,
-          delay: 100,
-          onComplete: () => {
-            this.tweens.add({
-              targets: bonusText,
-              alpha: 1,
-              duration: 300,
-              delay: 100,
-              onComplete: () => {
-                this.tweens.add({
-                  targets: ratingText,
-                  alpha: 1,
-                  duration: 300,
-                  delay: 100,
-                  onComplete: () => {
-                    this.tweens.add({
-                      targets: [restartButton, menuButton],
-                      alpha: 1,
-                      duration: 300,
-                      delay: 100,
-                    });
-                  },
-                });
-              },
-            });
-          },
-        });
+        },
       },
-    });
+      {
+        at: 800,
+        tween: {
+          targets: bonusText,
+          alpha: 1,
+          duration: 300,
+        },
+      },
+      {
+        at: 1200,
+        tween: {
+          targets: ratingText,
+          alpha: 1,
+          duration: 300,
+        },
+      },
+      {
+        at: 1600,
+        tween: {
+          targets: [restartButton, menuButton],
+          alpha: 1,
+          duration: 300,
+        },
+      },
+    ]);
+
+    timeline.play();
 
     // 버튼 호버 효과와 이벤트 설정
     this.setupButtonEvents(restartButton, menuButton);
 
     // 점수 1000 이상이면 축하 효과는 마지막에 정적으로 한번만
     if (gameScore.value >= 1000) {
-      this.time.delayedCall(1600, () => {
+      this.time.delayedCall(2000, () => {
         this.createCelebrationEffect();
       });
     }
