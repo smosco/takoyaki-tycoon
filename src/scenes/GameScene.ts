@@ -291,7 +291,7 @@ export class GameScene extends Phaser.Scene {
       },
     });
 
-    // this.sound.play('coin-steal-sound', { volume: 0.6 });
+    this.sound.play('penalty-sound', { volume: 0.6 });
   }
 
   private startGameTimer() {
