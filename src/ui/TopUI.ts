@@ -104,12 +104,18 @@ export class TopUI {
 
     const [minutes, seconds] = timeString.split(':').map(Number);
     const totalSeconds = minutes * 60 + seconds;
-    const maxTime = 180;
+    const maxTime = 120;
     const ratio = Phaser.Math.Clamp(totalSeconds / maxTime, 0, 1);
 
     // 진행바 업데이트
     this.progressBarFill.clear();
-    this.progressBarFill.fillGradientStyle(0xffd700, 0xff4444, 0xffd700, 0xff4444, 1);
+    this.progressBarFill.fillGradientStyle(
+      0xffd700,
+      0xff4444,
+      0xffd700,
+      0xff4444,
+      1
+    );
     this.progressBarFill.fillRoundedRect(
       this.progressBarX,
       this.progressBarY,

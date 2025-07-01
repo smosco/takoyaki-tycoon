@@ -1,4 +1,8 @@
-import type { TakoyakiOnPlate, IronPanCellState, Customer } from '../domain/types';
+import type {
+  TakoyakiOnPlate,
+  IronPanCellState,
+  Customer,
+} from '../domain/types';
 
 export type Tool =
   | 'batter'
@@ -17,7 +21,9 @@ export const platesWithTakoyaki: TakoyakiOnPlate[] = [];
 export const currentSelectedTool = { current: 'batter' as Tool };
 
 // 손님 시스템 상태
-export const currentCustomer: { customer: Customer | null } = { customer: null };
+export const currentCustomer: { customer: Customer | null } = {
+  customer: null,
+};
 export const gameLevel = { value: 1 };
 export const gameScore = { value: 0 };
 export const gameStats = {
@@ -29,8 +35,8 @@ export const gameStats = {
 
 // 게임 타이머 및 상태 관리
 export const gameTimer = {
-  totalTime: 180000, // 3분 (180초)
-  remainingTime: 180000,
+  totalTime: 120000, // 2분 (120초)
+  remainingTime: 120000,
   isRunning: false,
   startTime: 0,
 };
@@ -127,7 +133,9 @@ export function getFormattedTime(): string {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  return `${minutes.toString().padStart(2, '0')}:${seconds
+    .toString()
+    .padStart(2, '0')}`;
 }
 
 /**
