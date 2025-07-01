@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { gameScore, gameStats, resetGameState } from '../state/gameState';
-import { AssetLoader } from '../utils/AssetLoader';
+// import { AssetLoader } from '../utils/AssetLoader';
 
 /**
  * 게임 종료 화면을 관리하는 씬
@@ -11,9 +11,9 @@ export class EndScene extends Phaser.Scene {
     super('EndScene');
   }
 
-  preload() {
-    AssetLoader.loadAllAssets(this);
-  }
+  // preload() {
+  //   AssetLoader.loadAllAssets(this);
+  // }
 
   /**
    * 게임 종료 화면 UI를 생성합니다.

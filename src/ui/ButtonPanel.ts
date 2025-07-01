@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { currentSelectedTool, type Tool } from '../state/gameState';
+import { setCursorPointer } from '../utils/CursorUtils';
 
 /**
  * 게임의 모든 도구와 서빙 기능을 관리하는 버튼 패널 클래스
@@ -53,12 +54,7 @@ export class ButtonPanel {
       this.toolButtonImages.push(toolButtonImage);
       this.toolButtonData.push(toolData); // 도구 데이터 저장
 
-      toolButton.on('pointerover', () => {
-        this.scene.game.canvas.style.cursor = 'pointer';
-      });
-      toolButton.on('pointerout', () => {
-        this.scene.game.canvas.style.cursor = 'default';
-      });
+      setCursorPointer(toolButton, this.scene);
       toolButton.on('pointerdown', () => {
         currentSelectedTool.current = toolData.tool;
         this.updateAllButtonStyles();
@@ -76,22 +72,17 @@ export class ButtonPanel {
       .setInteractive()
       .setDepth(6);
 
-    const ServeButtonImage = this.scene.add
+    const serveButtonImage = this.scene.add
       .image(startX + 7 * 75, startY, serveData[0].image)
       .setScale(0.05)
       .setOrigin(0.5)
       .setDepth(6);
 
     this.toolButtonElements.push(serveButton);
-    this.toolButtonImages.push(ServeButtonImage);
+    this.toolButtonImages.push(serveButtonImage);
     this.toolButtonData.push(serveData[0]);
 
-    serveButton.on('pointerover', () => {
-      this.scene.game.canvas.style.cursor = 'pointer';
-    });
-    serveButton.on('pointerout', () => {
-      this.scene.game.canvas.style.cursor = 'default';
-    });
+    setCursorPointer(serveButton, this.scene);
     serveButton.on('pointerdown', () => {
       if (this.onServeCallback) {
         currentSelectedTool.current = serveData[0].tool;
@@ -126,12 +117,7 @@ export class ButtonPanel {
       this.toolButtonImages.push(toppingButtonImage);
       this.toolButtonData.push(toppingData); // 토핑 데이터 저장
 
-      toppingButton.on('pointerover', () => {
-        this.scene.game.canvas.style.cursor = 'pointer';
-      });
-      toppingButton.on('pointerout', () => {
-        this.scene.game.canvas.style.cursor = 'default';
-      });
+      setCursorPointer(toppingButton, this.scene);
       toppingButton.on('pointerdown', () => {
         currentSelectedTool.current = toppingData.tool;
         this.updateAllButtonStyles();

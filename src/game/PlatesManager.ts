@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { platesWithTakoyaki, currentSelectedTool, gameFlow } from '../state/gameState';
 import { TextureHelper } from '../utils/TextureHelper';
+import { setCursorPointer } from '../utils/CursorUtils';
 
 export class PlatesManager {
   private scene: Phaser.Scene;
@@ -50,12 +51,7 @@ export class PlatesManager {
       this.plateVisualElements.push(plateVisualElement);
       this.plateTextElements.push(plateTextElement);
 
-      plateVisualElement.on('pointerover', () => {
-        this.scene.game.canvas.style.cursor = 'pointer';
-      });
-      plateVisualElement.on('pointerout', () => {
-        this.scene.game.canvas.style.cursor = 'default';
-      });
+      setCursorPointer(plateVisualElement, this.scene);
       plateVisualElement.on('pointerdown', () => this.handlePlateClick(plateIndex));
     }
   }

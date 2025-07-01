@@ -8,6 +8,7 @@ import {
 import type { IronPanCellState } from '../domain/types';
 import { TextureHelper } from '../utils/TextureHelper';
 import { calculateCurrentCookingLevel } from '../domain/cooking';
+import { setCursorPointer } from '../utils/CursorUtils'; // 추가
 
 // 각 셀의 레이어들을 관리하는 인터페이스
 interface CellLayers {
@@ -69,12 +70,9 @@ export class IronPanManager {
         // 컨테이너에 레이어들 추가
         container.add([background, content]);
 
-        container.on('pointerover', () => {
-          this.scene.game.canvas.style.cursor = 'pointer';
-        });
-        container.on('pointerout', () => {
-          this.scene.game.canvas.style.cursor = 'default';
-        });
+        // 커서 포인터 효과 적용 (유틸 함수 사용)
+        setCursorPointer(container, this.scene);
+
         // 클릭 이벤트
         container.on('pointerdown', () => this.handleCellClick(row, col));
 
