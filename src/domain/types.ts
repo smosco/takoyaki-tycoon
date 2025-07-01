@@ -10,38 +10,26 @@ export type CookingLevel = 'raw' | 'perfect' | 'burnt';
 export interface IronPanCellState {
   /**
    * 반죽 들어있는지 확인
-   *
-   * @type {boolean}
    */
   hasBatter: boolean;
   /**
    * 문어 들어있는지 확인
-   *
-   * @type {boolean}
    */
   hasOctopus: boolean;
   /**
    * 뒤집은 적이 있는지 확인
-   *
-   * @type {boolean}
    */
   isFlipped: boolean;
   /**
    * 조리 시작 타임
-   *
-   * @type {(number | null)}
    */
   cookingStartTime: number | null;
   /**
    * 익힘 정도
-   *
-   * @type {CookingLevel}
    */
   cookingLevel: CookingLevel;
   /**
    * 그릇으로 옮겨졌는지 확인
-   *
-   * @type {boolean}
    */
   isMovedToPlate: boolean;
 }
@@ -50,10 +38,6 @@ export type CustomerMood = 'happy' | 'neutral' | 'angry';
 
 /**
  * 토핑 구성 정보
- *
- * @export
- * @interface ToppingBreakdown
- * @typedef {ToppingBreakdown}
  */
 export interface ToppingBreakdown {
   negi: number;
@@ -68,25 +52,18 @@ export interface ToppingBreakdown {
 export interface CustomerOrder {
   /**
    * 전체 주문 개수
-   * @type {number}
    */
   totalQuantity: number;
   /**
    * 남은 주문 개수
-   *
-   * @type {number}
    */
   remainingQuantity: number;
   /**
    * 전체 주문의 각 토핑 별 개수
-   *
-   * @type {ToppingBreakdown}
    */
   toppingBreakdown: ToppingBreakdown;
   /**
    * 남은 주문의 각 토핑 별 개수
-   *
-   * @type {ToppingBreakdown}
    */
   remainingToppingBreakdown: ToppingBreakdown;
 }
@@ -98,20 +75,14 @@ export interface CustomerOrder {
 export interface TakoyakiOnPlate {
   /**
    * 접시 위 타코야끼의 익힘 정도
-   *
-   * @type {('raw' | 'perfect' | 'burnt')}
    */
-  cookingLevel: 'raw' | 'perfect' | 'burnt';
+  cookingLevel: CookingLevel;
   /**
    * 접시 위 타코야끼의 소스 여부
-   *
-   * @type {boolean}
    */
   sauce: boolean;
   /**
    * 접시 위 타코야끼의 토핑 종류
-   *
-   * @type {('negi' | 'katsuobushi' | 'nori' | null)}
    */
   topping: 'negi' | 'katsuobushi' | 'nori' | null;
 }
@@ -122,9 +93,7 @@ export interface Customer {
   // TODO: 삭제
   isWaiting: boolean;
   /**
-   * 손님의 남은 인내심 시간
-   *
-   * @type {number}
+   * 손님의 남은 인내심 시간 (0-100, 시간이 지나면 감소)
    */
-  patience: number; // 0-100, 시간이 지나면 감소
+  patience: number;
 }
