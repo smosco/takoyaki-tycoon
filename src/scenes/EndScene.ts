@@ -153,17 +153,17 @@ export class EndScene extends Phaser.Scene {
 
   private calculateRating(): { text: string; color: string; description: string } {
     const score = gameScore.value;
-    if (score >= 9000)
-      return { text: '🏆 마스터 셰프', color: '#ffd700', description: '환상적인 솜씨입니다!' };
     if (score >= 8000)
+      return { text: '🏆 마스터 셰프', color: '#ffd700', description: '환상적인 솜씨입니다!' };
+    if (score >= 7000)
       return {
         text: '⭐ 훌륭한 요리사',
         color: '#4caf50',
         description: '완벽에 가까운 실력이에요.',
       };
-    if (score >= 7000)
-      return { text: '👍 숙련된 조리사', color: '#2196f3', description: '경험이 느껴집니다.' };
     if (score >= 6000)
+      return { text: '👍 숙련된 조리사', color: '#2196f3', description: '경험이 느껴집니다.' };
+    if (score >= 5000)
       return {
         text: '📈 성장 중인 요리사',
         color: '#ff9800',

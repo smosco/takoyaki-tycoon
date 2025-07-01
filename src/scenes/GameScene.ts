@@ -19,6 +19,8 @@ export class GameScene extends Phaser.Scene {
   private platesManager!: PlatesManager;
   private customerManager!: CustomerManager;
 
+  private backgroundMusic!: Phaser.Sound.BaseSound;
+
   constructor() {
     super('GameScene');
   }
@@ -51,7 +53,8 @@ export class GameScene extends Phaser.Scene {
       blendMode: 'NORMAL',
     });
 
-    this.sound.play('japan-background', { volume: 0.5, loop: true });
+    this.backgroundMusic = this.sound.add('japan-background', { volume: 0.5, loop: true });
+    this.backgroundMusic.play();
   }
 
   private initializeManagers() {
@@ -302,6 +305,8 @@ export class GameScene extends Phaser.Scene {
         this.topUI.updateTimer();
 
         if (gameEnded) {
+          // 게임 끝나면 배경 음악 종료
+          this.backgroundMusic?.stop();
           this.scene.start('EndScene');
         }
       },
