@@ -11,6 +11,6 @@ export function createNewCustomer(level: number): Customer {
     id: `customer_${Date.now()}`,
     order: generateRandomOrder(level),
     isWaiting: true,
-    patience: 100,
+    patience: 60,
   };
 }

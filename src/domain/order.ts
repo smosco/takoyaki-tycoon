@@ -103,7 +103,7 @@ export function compareOrderWithServedTakoyaki(
 
   const totalScore = baseScore + bonusScore;
 
-  const mood = currentPatience >= 60 ? 'happy' : currentPatience >= 30 ? 'neutral' : 'angry';
+  const mood = currentPatience >= 30 ? 'happy' : currentPatience >= 15 ? 'neutral' : 'angry';
 
   return {
     correctCount,

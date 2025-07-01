@@ -83,6 +83,8 @@ export class AssetLoader {
   }
 
   private static loadCustomerAssets(scene: Phaser.Scene) {
+    scene.load.image('speech-bubble', 'assets/speech-bubble.png');
+
     scene.load.image('customer-neutral', 'assets/customer-neutral.png');
     scene.load.image('customer-happy', 'assets/customer-happy.png');
     scene.load.image('customer-angry', 'assets/customer-angry.png');

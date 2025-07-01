@@ -93,7 +93,7 @@ export interface Customer {
   // TODO: 삭제
   isWaiting: boolean;
   /**
-   * 손님의 남은 인내심 시간 (0-100, 시간이 지나면 감소)
+   * 손님의 남은 인내심 시간 (0-60, 시간이 지나면 감소)
    */
   patience: number;
 }

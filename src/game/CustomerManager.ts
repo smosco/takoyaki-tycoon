@@ -14,9 +14,9 @@ export class CustomerManager {
   // TODO: 최대 상자 개수 설정
   private readonly maxBoxesDisplay = 3; // 최대 3개 상자까지 표시
 
-  // 주문 말풍선
+  // 주문 말풍선 - 9-slice 이미지로 변경
   private currentOrderBubble: {
-    graphics: Phaser.GameObjects.Graphics;
+    nineslice: Phaser.GameObjects.NineSlice;
     text: Phaser.GameObjects.Text;
   } | null = null;
 
@@ -34,7 +34,7 @@ export class CustomerManager {
 
   // 현재 손님의 기분 상태 (캐시)
   private currentMood: 'happy' | 'neutral' | 'angry' = 'happy';
-  private lastPatienceCheck: number = 100; // 마지막으로 체크한 인내심 값
+  private lastPatienceCheck: number = 60; // 마지막으로 체크한 인내심 값
 
   // 타이머 참조들 (정리용)
   private patienceUpdateTimer: Phaser.Time.TimerEvent | null = null;
@@ -216,7 +216,7 @@ export class CustomerManager {
 
     // 새 손님이므로 기분 및 인내심 초기화
     this.currentMood = 'happy';
-    this.lastPatienceCheck = 100;
+    this.lastPatienceCheck = 60;
     console.log('새 손님 등장! 초기 기분: happy');
 
     this.scene.tweens.add({
@@ -252,8 +252,8 @@ export class CustomerManager {
     if (!this.customerSprite || !currentCustomer.customer) return;
 
     this.showOrderBubble(
-      this.customerSprite.x - 200,
-      this.customerSprite.y - 200,
+      this.customerSprite.x - 225,
+      this.customerSprite.y - 210,
       currentCustomer.customer.order
     );
 
@@ -263,47 +263,62 @@ export class CustomerManager {
   private showOrderBubble(x: number, y: number, order: CustomerOrder) {
     this.clearOrderBubble();
 
-    const width = 200;
-    const height = 80;
-    const arrowHeight = 24;
+    const width = 187;
+    const height = 110;
 
-    const bubble = this.scene.add.graphics();
-    bubble.setDepth(20);
+    // 9-slice 말풍선 생성
+    // speechbubble 이미지의 경계 크기를 지정
+    const leftWidth = 44; // 왼쪽 경계 너비
+    const rightWidth = 44; // 오른쪽 경계 너비
+    const topHeight = 44; // 위쪽 경계 높이
+    const bottomHeight = 44; // 아래쪽 경계 높이
 
-    // 말풍선 배경 색
-    const bubbleColor = 0xfff6e0;
+    const speechBubble = this.scene.add.nineslice(
+      x,
+      y,
+      'speech-bubble',
+      undefined,
+      width,
+      height,
+      leftWidth,
+      rightWidth,
+      topHeight,
+      bottomHeight
+    );
 
-    // 둥글고 감성적인 말풍선 배경
-    bubble.fillStyle(bubbleColor, 1);
-    bubble.fillRoundedRect(x, y, width, height, 32);
-
-    // 꼬리 위치
-    const point1X = x + width - 110;
-    const point1Y = y + height - 1;
-    const point2X = x + width - 80;
-    const point2Y = y + height - 1;
-    const point3X = x + width - 75;
-    const point3Y = y + height + arrowHeight;
-
-    // 꼬리 채우기
-    bubble.fillStyle(bubbleColor, 1);
-    bubble.fillTriangle(point1X, point1Y, point2X, point2Y, point3X, point3Y);
+    speechBubble.setOrigin(0, 0);
+    speechBubble.setDepth(20);
 
     // 텍스트 추가
     const orderText = this.scene.add
-      .text(x + width / 2, y + 40, `타코야끼 ${order.totalQuantity}개 주문이다냥!`, {
-        fontSize: '16px',
-        color: '#cc2200',
+      .text(x + width / 2, y + height / 2 - 9, `타코야끼 ${order.totalQuantity}개 주문이다냥!`, {
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#432612',
         fontFamily: 'Arial',
+        align: 'center',
+        lineSpacing: 8,
         wordWrap: {
-          width: width - 24,
+          width: width - 40, // 말풍선 패딩 고려
           useAdvancedWrap: true,
         },
       })
       .setOrigin(0.5)
       .setDepth(21);
 
-    this.currentOrderBubble = { graphics: bubble, text: orderText };
+    this.currentOrderBubble = { nineslice: speechBubble, text: orderText };
+
+    // 등장 애니메이션
+    speechBubble.setScale(0);
+    orderText.setScale(0);
+
+    this.scene.tweens.add({
+      targets: [speechBubble, orderText],
+      scaleX: 1,
+      scaleY: 1,
+      duration: 300,
+      ease: 'Back.easeOut',
+    });
 
     // 2초 후 제거
     this.scene.time.delayedCall(2000, () => {
@@ -392,10 +407,10 @@ export class CustomerManager {
 
     this.clearMoodBubble();
 
-    const x = this.customerSprite.x - 180;
-    const y = this.customerSprite.y - 190;
-    const width = 160;
-    const height = 60;
+    const x = this.customerSprite.x - 225;
+    const y = this.customerSprite.y - 210;
+    const width = 187;
+    const height = 70;
 
     // 기분에 따른 말풍선 색상 설정
     let bubbleColor: number;
@@ -426,11 +441,11 @@ export class CustomerManager {
     // 말풍선 배경
     bubble.fillStyle(bubbleColor, 0.95);
     bubble.lineStyle(2, borderColor);
-    bubble.fillRoundedRect(x, y, width, height, 12);
-    bubble.strokeRoundedRect(x, y, width, height, 12);
+    bubble.fillRoundedRect(x, y, width, height, 24);
+    bubble.strokeRoundedRect(x, y, width, height, 24);
 
     // 생각 풍선 동그라미들 (손님 쪽으로)
-    const circleX = x + width / 2;
+    const circleX = x + width / 2 + 30;
     const circleStartY = y + height;
 
     // 큰 동그라미
@@ -444,7 +459,8 @@ export class CustomerManager {
     // 텍스트
     const bubbleText = this.scene.add
       .text(x + width / 2, y + height / 2, message, {
-        fontSize: '16px',
+        fontSize: '20px',
+        fontStyle: 'bold',
         color: textColor,
         align: 'center',
         fontFamily: 'Arial',
@@ -520,7 +536,7 @@ export class CustomerManager {
 
   clearOrderBubble() {
     if (this.currentOrderBubble) {
-      this.currentOrderBubble.graphics.destroy();
+      this.currentOrderBubble.nineslice.destroy();
       this.currentOrderBubble.text.destroy();
       this.currentOrderBubble = null;
     }
@@ -562,9 +578,9 @@ export class CustomerManager {
       loop: true,
     });
 
-    // 기분 업데이트 (2초마다로 줄임 - 더 반응성 있게)
+    // 기분 업데이트
     this.moodUpdateTimer = this.scene.time.addEvent({
-      delay: 2000,
+      delay: 1000,
       callback: this.updateMoodByPatience,
       callbackScope: this,
       loop: true,
